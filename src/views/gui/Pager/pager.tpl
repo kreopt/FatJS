@@ -1,0 +1,1 @@
+<span class="PrevPage">&lt;&lt;</span><span class="Page" data-page="1">1</span>..<span class="Page" data-page="{$current}">({$current})</span>..<span class="Page" data-page="{$max}">{$max}</span><span class="NextPage">&gt;&gt;</span>

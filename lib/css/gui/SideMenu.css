@@ -1,0 +1,3 @@
+.JAFW_SideMenu{width:180px;background:#ccc;height:480px;float:left;padding:10px 0 10px 10px;cursor:pointer;}
+.JAFW_MenuList li:hover{background:#eee;}
+.JAFW_MenuList li.Selected{background:#fdf5ce;}

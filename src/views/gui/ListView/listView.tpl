@@ -1,0 +1,1 @@
+<table class="listView" id="{$id}" style="width: 100%"></table>
