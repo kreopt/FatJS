@@ -20,6 +20,14 @@ removeConnection=(sSignal,sSlot,oReceiver)->
         if Object.keys(__connectionTable[sSignal]).length
             delete __connectionTable[sSignal]
 invoke=(sSignal,oData)->
+    # Глобальная рассылка (не только на клиент, но и на сервер и дочерние окна)
+    if sSignal[0]=='@'
+        sSignal=sSignal[1..]
+        api.call sSignal, oData,(oResponseSignal)->
+            if oResponseSignal
+                EMIT(oResponseSignal.name,oResponseSignal.data)
+        # TODO: отправлять на дочерние окна
+    # Локальная рассылка
     if __connectionTable[sSignal]
         for appName,connectionInfo of __connectionTable[sSignal]
             for slotName,slot of connectionInfo.slots

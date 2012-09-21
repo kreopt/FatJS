@@ -25,7 +25,7 @@ CMP 'jafw.gui.CheckList',
                 @dirty=1
                 @selected=[]
                 for val in aValues
-                    item=$s("#{@id} .listItem[data-id='#{val}'] input[type='checkbox']")
+                    item=$s("##{@id} .listItem[data-id='#{val}'] input[type='checkbox']")
                     $attr(item,'checked','checked')
                     @selected.push item
                 onSelect?()
