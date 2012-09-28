@@ -12,6 +12,10 @@ CMP 'jafw.gui.SideMenu',
     reload:(aItems)->
         @RENDER '@menu',@container,{menuId:@menuId,items:aItems}
         app=@
+        if aItems.length
+            first=$s('li',$s("##{app.menuId}"))
+            addUniqueClass(first,'Selected',$s("##{app.menuId}"))
+            app.launcher.run(first.dataset['page'])
         addEventBySelector "##{@menuId} li",'click',->
             addUniqueClass(@,'Selected',$s("##{app.menuId}"))
             app.launcher.run(@dataset['page'])
