@@ -109,9 +109,9 @@ window.APPLICATION=(sName,oBody)->
             @connectionList=[]
             @UID=JAFW.nextID()
             JAFW.running[sName][@UID]=@
-            @__setup?(@UID)
             EMIT 'APP_READY',{uid:@UID,name:sName,container:@container?.id}
             @_init?()
+            @__setup?(@UID)
         toString:->sName
     mix($A[sName]::,oBody)
     $A[sName]::__forms=[] if !$A[sName]::__forms

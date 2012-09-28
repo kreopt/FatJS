@@ -1,5 +1,5 @@
 var fs = require('fs');
-var less = require('/usr/node_modules/less/lib/less');
+var less = require('less');
 var walk = function (sourceDir, targetDir, fileHandler, done) {
     var results = [];
     fs.readdir(sourceDir, function (err, list) {

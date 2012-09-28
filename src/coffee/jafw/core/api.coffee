@@ -105,7 +105,9 @@ class JAFW.API
     # oArgs - параметры метода. Имена параметров должны начинаться с обозначения типа: [n=i=integer,f=float,s=string,o=complex object]
     call:(sSignature,oArgs,fSuccess,fError)->
         [module...,method]=sSignature.split(APP_DELIMITER)
-        requestData=URL::encode {mod:module.join('.'),method:method,args:oArgs}
+        requestData={mod:module.join('.'),method:method,args:oArgs}
+        requestData=@onBeforeSend(requestData) if @onBeforeSend?
+        requestData=URL::encode requestData
         @_sendRequest(requestData,fSuccess,fError)
     # Цепочечный вызов API-функций. Вызовы происходят в порядке следования в oRequests
     # oRequests - массив вида [[sName,sSignature,[oArgs1,oArgs2,..]],..]. Каждый массив в массиве oRequests задает
@@ -118,7 +120,9 @@ class JAFW.API
         oRequests.forEach (request)->
             [module...,method]=request[1].split(APP_DELIMITER)
             requests=requests.concat request[2].map (args)->{name:request[0],mod:module.join('.'),method:method,args:args}
-        requestData=URL::encode {chain:1,requests:requests}
+        requestData={chain:1,requests:requests}
+        requestData=@onBeforeSend(requestData) if @onBeforeSend?
+        requestData=URL::encode requestData
         @_sendRequest(requestData,fSuccess,fError)
 JAFW.URL=URL
 JAFW.Ajax=Ajax
