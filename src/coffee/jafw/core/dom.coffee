@@ -48,6 +48,21 @@ window.$data=(DOMNode,sName,vValue)->
     DOMNode.dataset[sName]=vValue
 window.$d=document
 window.$w=window
+
+# DOM Element Class Mapping
+window.$S=(sCPath,DOMScope)->
+    classes=sCPath.split('.')
+    DOMScope=$d if not DOMScope
+    el=DOMScope
+    classes.forEach (e)=>el=$s(e,el)
+    el
+window.$A=(sCPath,DOMScope)->
+    classes=sCPath.split('.')
+    DOMScope=$d if not DOMScope
+    el=DOMScope
+    classes.forEach (e)=>el=$s(e,el)
+    el
+
 window.toggleClass=(DOMNode,className)->DOMNode.classList.toggle(className)
 window.hasClass=(DOMNode,className)->if DOMNode.classList then DOMNode.classList.contains(className) else false
 window.addClass=(DOMNode,className)->DOMNode.classList.add(className)
