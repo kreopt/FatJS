@@ -54,13 +54,13 @@ window.$S=(sCPath,DOMScope)->
     classes=sCPath.split('.')
     DOMScope=$d if not DOMScope
     el=DOMScope
-    classes.forEach (e)=>el=$s(e,el)
+    classes.forEach (e)=>el=$s('.'+e,el)
     el
 window.$A=(sCPath,DOMScope)->
     classes=sCPath.split('.')
     DOMScope=$d if not DOMScope
     el=DOMScope
-    classes.forEach (e)=>el=$s(e,el)
+    classes.forEach (e)=>el=$s('.'+e,el)
     el
 
 window.toggleClass=(DOMNode,className)->DOMNode.classList.toggle(className)
