@@ -85,10 +85,10 @@ class JAFW.Launcher
             if ('#'+hash)!=window.location.hash
                 @evented=0
                 window.location.hash=hash
-            ((stateCont)=>RUN sName,@container,(uid)=>
-                @currentApp=JAFW.running[sName][uid]
-                # Дополняем стек состоянием только что запущенного приложения
-                @stateStack.push({name:sName,app:@currentApp,cont:stateCont}))(stateCont)
+        ((stateCont)=>RUN sName,@container,(uid)=>
+            @currentApp=JAFW.running[sName][uid]
+            # Дополняем стек состоянием только что запущенного приложения
+            @stateStack.push({name:sName,app:@currentApp,cont:stateCont}))(stateCont)
     # Возврат к предыдущему приложению
     pop:()->
         # Если стек состоит только из одного состояния приложения, возвращатсья некуда
