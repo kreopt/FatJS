@@ -1,10 +1,14 @@
 class JAFW.Notifier
-    show:(sHead,sBody)->
+    alert:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Alert')
+    banner:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Banner')
+    error:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Error')
+    notify:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Notify')
+    show:(sHead,sBody,sType)->
         notify=$c('div')
         #TODO: сделать более гибким не прибегая к шаблонам
         notify.innerHTML="""<div class="NotifyHead">#{sHead}</div><div class="NotifyText">#{sBody}</div>""";
-        notify.className='Notify';
-        notifications=$a('.Notify');
+        notify.className='Notify Notify_'+sType;
+        notifications=$a('.Notify_'+sType);
         height=0;
         for notification in notifications
             height+=notification.clientHeight+12+3;
@@ -12,8 +16,8 @@ class JAFW.Notifier
         $s('body').appendChild(notify);
         notify.timeout=setTimeout ->
             oldHeight=notify.clientHeight+12+3;
-            notify.parentNode?.removeChild(notify)
-            notifications=$a('.Notify')
+            #notify.parentNode?.removeChild(notify)
+            notifications=$a('.Notify_'+sType)
             if (notifications.length>0)
                 for ntf in notifications
                     ntf.style.top=ntf.offsetTop-oldHeight+'px';

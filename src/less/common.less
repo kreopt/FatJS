@@ -1,4 +1,54 @@
 @import 'const.less';
+@import 'mixins.less';
+
+.Notify{
+    border-radius:6px;
+    color:white;
+    position:fixed;
+    background: rgba(0,0,0,0.5);
+    padding:6px;
+
+    .transition(background-color 0.5s linear);
+
+    .NotifyHead{
+        font-size: 14px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .NotifyText{
+        margin-top: 10px;
+    }
+}
+.Notify_Notify{
+    left:100%;
+    margin-left:-300px;
+    width:280px;
+}
+.Notify_Banner{
+    margin: auto;
+    width: 600px;
+    margin-top: 100px;
+}
+.Notify_Alert{
+    margin: auto;
+    width: 600px;
+    margin-top: 200px;
+    min-height: 300px;
+    .NotifyHead{font-size: 16px;}
+    .NotifyText{font-size: 14px;}
+}
+.Notify_Error{
+    .Notify_Banner;
+    .NotifyHead{font-size: 16px;color: #ff0000;}
+    .NotifyText{font-size: 14px;}
+}
+.Notify:hover{
+    .transition(opacity 0.1s linear);
+    opacity: 0.1;
+}
+
+
+
 .link:hover{
     text-decoration: underline;
     cursor: pointer;
@@ -30,12 +80,6 @@
     font-family: Caption;
 }
 /// HELPERS
-.transition(@prop){
-    -webkit-transition: @prop;
-    -moz-transition: @prop;
-    -o-transition: @prop;
-    transition: @prop;
-}
 .buttonSelected{
     background: @selection-color !important;
 }
@@ -77,29 +121,6 @@ input:valid:required {border: 2px solid #0c0;}
     margin-left:-150px;
     top:50%;
     margin-top:-50px;
-}
-
-.Notify{
-    border-radius:6px;
-    color:white;
-    position:fixed;
-    left:100%;
-    margin-left:-300px;
-    width:280px;
-    padding:6px;
-    .transition(background-color 0.5s linear);
-    background: rgba(0,0,0,0.5);
-}
-.Notify:hover{
-    .transition(opacity 0.1s linear);
-    opacity: 0.1;
-
-}
-.NotifyHead{
-    font-size: 14px;
-}
-.NotifyText{
-    margin-top: 10px;
 }
 /// LINKS
 a{
