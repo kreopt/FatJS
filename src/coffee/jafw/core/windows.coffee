@@ -16,7 +16,7 @@ class JAFW.Notifier
         $s('body').appendChild(notify);
         notify.timeout=setTimeout ->
             oldHeight=notify.clientHeight+12+3;
-            #notify.parentNode?.removeChild(notify)
+            notify.parentNode?.removeChild(notify)
             notifications=$a('.Notify_'+sType)
             if (notifications.length>1)
                 for ntf in notifications
