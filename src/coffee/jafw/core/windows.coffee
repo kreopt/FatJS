@@ -1,7 +1,7 @@
 class JAFW.Notifier
     alert:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Alert')
     banner:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Banner')
-    error:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Error')
+    error:(sBody)->JAFW.Notifier::show('Ошибка',sBody,'Error')
     notify:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Notify')
     show:(sHead,sBody,sType)->
         notify=$c('div')
