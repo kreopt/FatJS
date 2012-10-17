@@ -4,6 +4,8 @@ class JAFW.Notifier
     error:(sBody)->JAFW.Notifier::show('Ошибка',sBody,'Error')
     notify:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Notify')
     show:(sHead,sBody,sType)->
+        if not sType?
+            sType='Notify'
         notify=$c('div')
         #TODO: сделать более гибким не прибегая к шаблонам
         notify.innerHTML="""<div class="NotifyHead">#{sHead}</div><div class="NotifyText">#{sBody}</div>""";
