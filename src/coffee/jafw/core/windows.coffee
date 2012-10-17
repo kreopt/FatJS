@@ -18,7 +18,7 @@ class JAFW.Notifier
             oldHeight=notify.clientHeight+12+3;
             #notify.parentNode?.removeChild(notify)
             notifications=$a('.Notify_'+sType)
-            if (notifications.length>0)
+            if (notifications.length>1)
                 for ntf in notifications
                     ntf.style.top=ntf.offsetTop-oldHeight+'px';
         ,5000;
