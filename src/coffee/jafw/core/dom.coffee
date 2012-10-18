@@ -90,6 +90,12 @@ window.addEventBySelector=(sSelector,DOMScope,sEventName,fCallback)->
         DOMScope=undefined
     DOMNodes=$a(sSelector,DOMScope)
     addEvents(DOMNodes,sEventName,fCallback)
+window.getNodeByvent=(eEvent) ->
+    eEvent = eEvent || window.event
+    n = eEvent.target || eEvent.srcElement
+    if n.correspondingUseElement # Нужно для svg
+        n = n.correspondingUseElement
+    return n
 window.removeNodesBySelector=(sSelector,DOMScope)->
     DOMNodes=DOMProxy::scope(DOMScope).querySelectorAll(sSelector)
     for node in DOMNodes
