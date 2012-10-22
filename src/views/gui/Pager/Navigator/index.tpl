@@ -13,8 +13,9 @@
 {else}
     {if $pageCount>8}<button class="PageDel">...</button>{/if}
 {/if}
-
-{for $i=$right to $pageCount}
-    <button class="PageIndex {if $i==$currentPage}Selected{/if}" data-idx="{$i}">{$i}</button>
-{/for}
+{if $pageCount>6}
+    {for $i=$right to $pageCount}
+        <button class="PageIndex {if $i==$currentPage}Selected{/if}" data-idx="{$i}">{$i}</button>
+    {/for}
+{/if}
 <button class="NextPage">&gt;&gt;</button>

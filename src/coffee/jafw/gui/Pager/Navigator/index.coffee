@@ -5,13 +5,10 @@ CMP 'jafw.gui.Pager.Navigator',
         @currentPage=1
     bindToView:(@view)->
         @view.binded[@UID]=@
-        @viewId=@view.UID
-        @recordCount=@view.recordCount
-        @recordsPerPage=@view.recordsPerPage
     onPageChanged:({pageIndex,viewId,navId})->
-        return if viewId!=@viewId
+        return if viewId!=@view.UID
         @currentPage=pageIndex
-        pageCount=Math.ceil(@recordCount / @recordsPerPage)
+        pageCount=Math.ceil(@view.recordCount / @view.recordsPerPage)
         @RENDER '@index',@container,{
                 pageCount:pageCount,
                 currentPage:pageIndex,
@@ -30,8 +27,8 @@ CMP 'jafw.gui.Pager.Navigator',
             if a.currentPage<Math.ceil(a.recordCount / a.recordsPerPage)
                 a.EMIT 'PAGE_CHANGED',{pageIndex:a.currentPage+1,viewId:a.viewId,navId:a.UID}
     show:->
-        assert(@viewId?)
+        assert(@view?)
         @view.recordCount=0
         @view.pageFrom=0
         @view.pageTo=0
-        @EMIT 'PAGE_CHANGED',{pageIndex:@currentPage,viewId:@viewId,navId:@UID}
+        @EMIT 'PAGE_CHANGED',{pageIndex:@currentPage,viewId:@view.UID,navId:@UID}
