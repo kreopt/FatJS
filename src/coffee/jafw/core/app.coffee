@@ -183,7 +183,7 @@ mix=(oObject,oMixin)->
 window.RENDER=(sFormName,DOMContainer,oData)->
     oData={} if not oData?
     try
-        rendered=JAFW.RenderEngine.render(sFormName,oData)
+        rendered=JAFW.RenderEngine.render(sFormName.replace(/\./g,'/'),oData)
     catch expection
         rendered = ''
         DEBUG 'Render error: '+sFormName+' ('+expection+')'

@@ -1,11 +1,9 @@
 class JAFW.Notifier
-    alert:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Alert')
+    alert:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Alert',0)
     banner:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Banner')
     error:(sBody)->JAFW.Notifier::show('Ошибка',sBody,'Error')
     notify:(sHead,sBody)->JAFW.Notifier::show(sHead,sBody,'Notify')
-    show:(sHead,sBody,sType)->
-        if not sType?
-            sType='Notify'
+    show:(sHead,sBody,sType='Notify',iTimeout=5000)->
         notify=$c('div')
         #TODO: сделать более гибким не прибегая к шаблонам
         notify.innerHTML="""<div class="NotifyHead">#{sHead}</div><div class="NotifyText">#{sBody}</div>""";
@@ -16,14 +14,17 @@ class JAFW.Notifier
             height+=notification.clientHeight+12+3;
         notify.style.top=60+height+'px';
         $s('body').appendChild(notify);
-        notify.timeout=setTimeout ->
-            oldHeight=notify.clientHeight+12+3;
-            notify.parentNode?.removeChild(notify)
-            notifications=$a('.Notify_'+sType)
-            if (notifications.length>1)
-                for ntf in notifications
-                    ntf.style.top=ntf.offsetTop-oldHeight+'px';
-        ,5000;
+        if iTimeout
+            notify.timeout=setTimeout((=>@hide(notify,sType)), iTimeout)
+        else
+            notify.onclick= =>@hide(notify,sType)
+    hide:(DOMNotify,sType)->
+        oldHeight=DOMNotify.clientHeight+12+3;
+        DOMNotify.parentNode?.removeChild(DOMNotify)
+        notifications=$a('.Notify_'+sType)
+        if (notifications.length>0)
+            for ntf in notifications
+                ntf.style.top=ntf.offsetTop-oldHeight+'px';
     toString:->'Notifier'
 ##
 # LOAD INDICATOR
