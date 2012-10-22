@@ -21,9 +21,11 @@ CMP 'jafw.gui.Pager.View',
         startIndex=(pageIndex-1)*@recordsPerPage
         if @pageFrom<=pageIndex<@pageTo
             @show(startIndex)
+            @init?()
         else
-            @getRecords startIndex+1, @recordsPerPage*5,(pages)=>
+            @getRecords startIndex+1, @recordsPerPage*5,(pages,init)=>
                 @pages=pages
                 @pageFrom=pageIndex
                 @pageTo=pageIndex+5
+                @init=init
                 @onPageChanged({pageIndex,viewId,navId})
