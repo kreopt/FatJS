@@ -19,13 +19,13 @@ CMP 'jafw.gui.Pager.Navigator',
         a=@
         addEventBySelector '.PageIndex',@container,'click',->
             if a.currentPage!=Number(@dataset['idx'])
-                a.EMIT 'PAGE_CHANGED',{pageIndex:Number(@dataset['idx']),viewId:a.viewId,navId:a.UID}
+                a.EMIT 'PAGE_CHANGED',{pageIndex:Number(@dataset['idx']),viewId:a.view.UID,navId:a.UID}
         addEventBySelector '.PrevPage',@container,'click',->
             if a.currentPage>1
-                a.EMIT 'PAGE_CHANGED',{pageIndex: a.currentPage-1,viewId:a.viewId,navId:a.UID}
+                a.EMIT 'PAGE_CHANGED',{pageIndex: a.currentPage-1,viewId:a.view.UID,navId:a.UID}
         addEventBySelector '.NextPage',@container,'click',->
             if a.currentPage<Math.ceil(a.recordCount / a.recordsPerPage)
-                a.EMIT 'PAGE_CHANGED',{pageIndex:a.currentPage+1,viewId:a.viewId,navId:a.UID}
+                a.EMIT 'PAGE_CHANGED',{pageIndex:a.currentPage+1,viewId:a.view.UID,navId:a.UID}
     show:->
         assert(@view?)
         @view.recordCount=0
