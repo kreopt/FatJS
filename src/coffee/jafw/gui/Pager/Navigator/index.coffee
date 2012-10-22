@@ -31,4 +31,7 @@ CMP 'jafw.gui.Pager.Navigator',
                 a.EMIT 'PAGE_CHANGED',{pageIndex:a.currentPage+1,viewId:a.viewId,navId:a.UID}
     show:->
         assert(@viewId?)
+        @view.recordCount=0
+        @view.pageFrom=0
+        @view.pageTo=0
         @EMIT 'PAGE_CHANGED',{pageIndex:@currentPage,viewId:@viewId,navId:@UID}
