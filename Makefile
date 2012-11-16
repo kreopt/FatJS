@@ -1,4 +1,3 @@
 all:
-	node build.js
-	coffee -o ./lib/js/ -c ./src/coffee
-	cp -r ./src/lib/* ./lib/js/lib
+	$(COFFEE) -o ../../lib/jafw/core -c ./src/core
+	$(MAKE) -C src/widgets all

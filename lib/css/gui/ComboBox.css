@@ -1,4 +1,0 @@
-.ComboBox{min-width:200px;cursor:pointer;}
-.ComboBoxItem{background:#fff;border:1px solid;padding:3px;border-radius:4px;}
-.ComboBoxList{background:#fff;border:1px solid;min-width:inherit;max-height:300px;overflow-y:auto;}
-.ComboBox .listItem:hover{background:#bbccdd;cursor:pointer;}

@@ -1,0 +1,28 @@
+@import '../../common';
+section.TreeItem{
+    padding: 2px;
+    padding-right: 0;
+    padding-left: 10px;
+    hgroup{
+        background: #fc0;
+        border-radius: 4px;
+        padding: 2px;
+        border:1px solid #f90;
+    }
+    hgroup:hover{
+        background: #fd2;
+    }
+    section.TreeItem.Leaf:nth-child(even){
+        background: #fff;
+        border-radius: 6px;
+    }
+    section.TreeItem.Leaf:hover{
+        background: #fec;
+    }
+
+}
+section.RootTreeItem{
+    background: #ffc;
+    .frame;
+    padding: 5px;
+}
