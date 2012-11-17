@@ -50,7 +50,33 @@ class LoadIndicator
     hide:->
         document.body.removeChild(el) if el=document.getElementById('Overlay')
 JAFW.LoadIndicator=new LoadIndicator()
-class JAFW.Window
+class Window
+    constructor:->
+        CONNECT 'CREATE_WINDOW','show',@
+    show:({cls,app,args})->
+        id=JAFW.nextID()
+        overlay=$c('div')
+        overlay.className='Overlay'
+        overlay.style.height=window.innerHeight+'px'
+        overlay.style.width=window.innerWidth+'px'
+        overlay.style.position='fixed'
+        overlay.style.top='0px'
+        overlay.style.left='0px'
+        overlay.style.background='rgba(0,0,0,0.5)'
+        overlay.style.overflow='auto'
+
+        resize=->
+            overlay.style.height=window.innerHeight+'px'
+            overlay.style.width=window.innerWidth+'px'
+        window.addEventListener('resize',resize,false)
+        overlay.innerHTML="""<div class="WINDOW" id="WIN_#{id}"><header></header><section class="Content"></section></div>"""
+        JAFW.run($s('.Content',overlay),app,args)
+        $s('body').appendChild(overlay)
+    close:(sWindowId)->
+        removeNodesBySelector "#Overlay_#{sWindowId}"
+        removeNodesBySelector "#WIN_#{sWindowId}"
+        delete JAFW.Window::windows[sWindowId]
+class WindowOld
     windows:{}
     buttons:{
         'OK':'Ок',
