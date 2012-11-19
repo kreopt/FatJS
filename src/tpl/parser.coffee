@@ -31,7 +31,7 @@ tokens={
     INCLUDE:[/^include/]
     EXTENDS:[/^extends/]
 
-    IDENTIFIER: [/^\$[A-Za-z_\x7f-\uffff][$\w\x7f-\uffff]*/,(parser,token)->parser.vars[token]=null]
+    IDENTIFIER: [/^[A-Za-z_$][A-Za-z0-9_$]*/,(parser,token)->parser.vars[token]=null]
     NUMBER:     [/^[0-9]+/]
     STRING:     [/^"[^"]*"|'[^']*'/]
     OPERATION:  [/^\=\=|!=|<|>|>=|>=|!==|===/]

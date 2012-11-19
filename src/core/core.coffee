@@ -253,6 +253,7 @@ class Launcher
     constructor:()->
         CONNECT('LAUNCHER_PUSH','push',@)
         CONNECT('LAUNCHER_REPLACE','repl',@)
+        CONNECT('LAUNCHER_BACK','back',@)
         @sel='body'
         # обработчик изменения хеша в адресной строке
         window.onhashchange= =>
@@ -260,6 +261,8 @@ class Launcher
             JAFW.run(@sel,app,JAFW.Url.decode(args))
         window.onpopstate=(e)=>
             @sel=e.state
+    back:->
+        window.history.back()
     push:({cont,app,args})->
         window.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
