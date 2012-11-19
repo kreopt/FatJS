@@ -1,0 +1,4 @@
+APP_NAME=CheckList
+JS=
+CSS=
+HTML=

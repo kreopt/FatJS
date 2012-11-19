@@ -216,12 +216,13 @@ invoke=(sSignal,oData)->
             if oResponseSignal
                 EMIT(oResponseSignal.name,oResponseSignal.data)
     # TODO: отправлять на дочерние окна
+    #[signal,uid]=sSignal.split(':')
     # Локальная рассылка
     if __connectionTable[sSignal]
         for appName,connectionInfo of __connectionTable[sSignal]
             for slotName,slot of connectionInfo.slots
-                slot.call(connectionInfo.instance,oData)
-
+                #if (not uid?) or (uid? and uid==connectionInfo.instance.UID)
+                    slot.call(connectionInfo.instance,oData)
 # Удалить подписку на сигнал
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала

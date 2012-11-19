@@ -1,0 +1,1 @@
+<input type="checkbox" value="{$item[$idField]}" {if $checked}checked="checked"{/if}>{$item[$dataField]}

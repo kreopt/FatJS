@@ -1,16 +1,27 @@
-JAFW.Apps.std_SideMenu.HANDLER 'index',
-    init:(DOMContainer,oConfig)->
-        @container=DOMContainer
-        @menuId=oConfig.id
-        addClass(@container,'JAFW_SideMenu')
-
-        selectItem=(item,first)->
-            old=$('Selected',$s("##{oConfig.id}")).dataset?['page']
-            addUniqueClass(item,'Selected',$s("##{oConfig.id}"))
-            if first
-                EMIT('MENU_STARTED',{oldApp:old,newApp:item.dataset['page']})
-            else
-                EMIT('MENU_CHANGED',{oldApp:old,newApp:item.dataset['page']})
-        if oConfig.items.length
-            selectItem($s('li',$s("##{oConfig.id}")),true)
-        addEventBySelector "##{oConfig.id} li",'click',->selectItem(@,false)
+JAFW.Apps.std_Pager.HANDLER 'index',
+    preRender:(renderCallback,{@pageIndex,@navId,@itemCount,@itemsPerPage})->
+        @currentPage=@pageIndex
+        pageCount=Math.ceil(@itemCount / @itemsPerPage)
+        renderCallback {
+            pageCount:pageCount,
+            currentPage:@pageIndex,
+            left: if @pageIndex<6 then Math.min(6,pageCount) else 2,
+            middle:Math.min(@pageIndex+1,pageCount),
+            right:if @pageIndex>Math.max(0,pageCount-4) then Math.max(1,pageCount-5) else Math.max(1,pageCount-1),
+        }
+    init:(DOMContainer,{pageIndex,navId,pageCount,itemsPerPage})->
+        a=@
+        @addEventBySelector '.PageIndex',@container,'click',->
+            if a.currentPage!=Number(@dataset['idx'])
+                a.pageChange(Number(@dataset['idx']))
+        @addEventBySelector '.PrevPage',@container,'click',->
+            if a.currentPage>1
+                a.pageChange(a.currentPage-1)
+        @addEventBySelector '.NextPage',@container,'click',->
+            if a.currentPage<Math.ceil(a.itemCount / a.itemsPerPage)
+                a.pageChange(a.currentPage+1)
+        @pageChange(1)
+    pageChange:(pageIndex)->
+        startIndex=(pageIndex-1)* @itemsPerPage
+        amount=pageIndex* @itemsPerPage
+        EMIT 'PAGE_SELECTED:'+ @navId,{startIndex,amount}

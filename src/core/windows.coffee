@@ -1,9 +1,9 @@
-class JAFW.Notifier
-    success:({head,body})->JAFW.Notifier::show(head,body,'Success')
-    alert:({head,body})->JAFW.Notifier::show(head,body,'Alert',0)
-    banner:({head,body})->JAFW.Notifier::show(head,body,'Banner')
-    error:({body})->JAFW.Notifier::show('Ошибка',body,'Error')
-    notify:({head,body})->JAFW.Notifier::show(head,body,'Notify')
+class Notifier
+    success:({head,body})->JAFW.Notifier.show(head,body,'Success')
+    alert:({head,body})->JAFW.Notifier.show(head,body,'Alert',0)
+    banner:({head,body})->JAFW.Notifier.show(head,body,'Banner')
+    error:({body})->JAFW.Notifier.show('Ошибка',body,'Error')
+    notify:({head,body})->JAFW.Notifier.show(head,body,'Notify')
     show:(sHead,sBody,sType='Notify',iTimeout=5000)->
         notify=$c('div')
         #TODO: сделать более гибким не прибегая к шаблонам
@@ -26,6 +26,7 @@ class JAFW.Notifier
         if (notifications.length>0)
             for ntf in notifications
                 ntf.style.top=ntf.offsetTop-oldHeight+'px';
+JAFW.__Register('Notifier',Notifier)
 ##
 # LOAD INDICATOR
 ##
@@ -53,10 +54,11 @@ JAFW.LoadIndicator=new LoadIndicator()
 class Window
     constructor:->
         CONNECT 'CREATE_WINDOW','show',@
-    show:({cls,app,args})->
-        id=JAFW.nextID()
+    show:({cls,title,app,args})->
+        id=JAFW.__nextID()
         overlay=$c('div')
         overlay.className='Overlay'
+        overlay.setAttribute('data-id',id)
         overlay.style.height=window.innerHeight+'px'
         overlay.style.width=window.innerWidth+'px'
         overlay.style.position='fixed'
@@ -69,13 +71,18 @@ class Window
             overlay.style.height=window.innerHeight+'px'
             overlay.style.width=window.innerWidth+'px'
         window.addEventListener('resize',resize,false)
-        overlay.innerHTML="""<div class="WINDOW" id="WIN_#{id}"><header></header><section class="Content"></section></div>"""
+        overlay.innerHTML="""<div class="WINDOW #{cls}" id="WIN_#{id}" data-id="#{id}">
+                          <header class="WindowHead"><span style="padding-left: 20px;font-weight: bold">#{title}</span>
+                          <img class="CloseWindow" style="float: right" class="point" height="16" src="#{JAFWConf.img_dir}Icons/cross.svg"/>
+                          </header><section class="Content"></section></div>
+                          """
+        a=@
+        $s('.CloseWindow',overlay).onclick= ->a.close(@parentNode.parentNode.dataset['id'])
         JAFW.run($s('.Content',overlay),app,args)
         $s('body').appendChild(overlay)
     close:(sWindowId)->
-        removeNodesBySelector "#Overlay_#{sWindowId}"
-        removeNodesBySelector "#WIN_#{sWindowId}"
-        delete JAFW.Window::windows[sWindowId]
+        removeNodesBySelector """.Overlay[data-id="#{sWindowId}"]"""
+JAFW.__Register('WinMan',Window)
 class WindowOld
     windows:{}
     buttons:{
