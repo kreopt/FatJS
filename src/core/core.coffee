@@ -59,6 +59,7 @@ class AppEnvironment
             HANDLER:(name,body)->
                 body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args)
                 body.__appName=appName
+                body.toString=->@__appName
                 AppEnvironment::_registered[appName].handlers[name]=body
                 Object.defineProperty(AppEnvironment::_registered[appName],name,{
                     get:->AppEnvironment::_registered[appName].handlers[name].init
