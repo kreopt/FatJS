@@ -1,8 +1,12 @@
 JAFW.Apps.std_Pager.HANDLER 'index',
     preRender:(renderCallback,{@pageIndex,@navId,@itemCount,@itemsPerPage})->
+        CONNECT 'RESET_PAGER:'+@navId,'reset',@
+        @render=renderCallback
+        @reset({@pageIndex,@navId,@itemCount,@itemsPerPage})
+    reset:({@pageIndex,@itemCount,@itemsPerPage})->
         @currentPage=@pageIndex
         pageCount=Math.ceil(@itemCount / @itemsPerPage)
-        renderCallback {
+        @render {
             pageCount:pageCount,
             currentPage:@pageIndex,
             left: if @pageIndex<6 then Math.min(6,pageCount) else 2,
