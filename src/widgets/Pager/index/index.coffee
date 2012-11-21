@@ -11,17 +11,23 @@ JAFW.Apps.std_Pager.HANDLER 'index',
         }
     init:(DOMContainer,{pageIndex,navId,pageCount,itemsPerPage})->
         a=@
-        @addEventBySelector '.PageIndex',@container,'click',->
+        @addEventBySelector '.PageIndex','click',->
             if a.currentPage!=Number(@dataset['idx'])
+                addUniqueClass(@,'Selected',@parentNode)
                 a.pageChange(Number(@dataset['idx']))
-        @addEventBySelector '.PrevPage',@container,'click',->
+        @addEventBySelector '.PrevPage','click',->
             if a.currentPage>1
+                pageElement=$s('.PageIndex[data-idx="'+(a.currentPage-1)+'"]',@parentNode)
+                addUniqueClass(pageElement,'Selected',@parentNode)
                 a.pageChange(a.currentPage-1)
-        @addEventBySelector '.NextPage',@container,'click',->
+        @addEventBySelector '.NextPage','click',->
             if a.currentPage<Math.ceil(a.itemCount / a.itemsPerPage)
+                pageElement=$s('.PageIndex[data-idx="'+(a.currentPage+1)+'"]',@parentNode)
+                addUniqueClass(pageElement,'Selected',@parentNode)
                 a.pageChange(a.currentPage+1)
         @pageChange(1)
     pageChange:(pageIndex)->
         startIndex=(pageIndex-1)* @itemsPerPage
         amount=pageIndex* @itemsPerPage
+        @currentPage=pageIndex
         EMIT 'PAGE_SELECTED:'+ @navId,{startIndex,amount}
