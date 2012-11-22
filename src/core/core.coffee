@@ -60,10 +60,10 @@ class AppEnvironment
                 body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args)
                 body.__appName=appName
                 body.toString=->@__appName
-                AppEnvironment::_registered[appName].handlers[name]=body
-                Object.defineProperty(AppEnvironment::_registered[appName],name,{
-                    get:->AppEnvironment::_registered[appName].handlers[name].init
-                })
+                AppEnvironment::_registered[appName].handlers[name]=->
+                    for p of body
+                        @[p]=body[p]
+                    undefined
 
             put:(selector,blockName,args)->
                 args={} if not args
@@ -73,14 +73,17 @@ class AppEnvironment
                 else
                     container=if selector then $s(selector) else null
 
-                handler=AppEnvironment::_registered[appName].handlers[blockName]
+                handler=new AppEnvironment::_registered[appName].handlers[blockName](selector)
 
                 # DOM wrappers
-                handler.$s=(selector)->$s(selector,container)
-                handler.$a=(selector)->$a(selector,container)
-                handler.$S=(selector)->$S(selector,container)
-                handler.$A=(selector)->$A(selector,container)
-                handler.addEventBySelector=(sSelector,sEventName,fCallback)->addEventBySelector(sSelector,container,sEventName,fCallback)
+                ((handler,container)->
+                    handler.__HID=JAFW.__nextID()
+                    handler.$s=(selector)->$s(selector,container)
+                    handler.$a=(selector)->$a(selector,container)
+                    handler.$S=(selector)->$S(selector,container)
+                    handler.$A=(selector)->$A(selector,container)
+                    handler.addEventBySelector=(sSelector,sEventName,fCallback)->addEventBySelector(sSelector,container,sEventName,fCallback)
+                )(handler,container)
 
                 if not handler.preRender?
                     handler.preRender=(r,args)->r(args)
