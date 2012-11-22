@@ -3,9 +3,13 @@ JAFW.Apps.std_Pager.HANDLER 'index',
         CONNECT 'RESET_PAGER:'+@navId,'reset',@
         @render=renderCallback
         @reset({@pageIndex,@navId,@itemCount,@itemsPerPage})
-    reset:({@pageIndex,@itemCount,@itemsPerPage})->
-        @currentPage=@pageIndex
+    reset:({pageIndex,itemCount,itemsPerPage})->
+        @pageIndex=pageIndex if pageIndex
+        @itemCount=itemCount if itemCount
+        @itemsPerPage=itemsPerPage if itemsPerPage
         pageCount=Math.ceil(@itemCount / @itemsPerPage)
+        @pageIndex=pageCount if @pageIndex>pageCount
+        @currentPage=@pageIndex
         @render {
             pageCount:pageCount,
             currentPage:@pageIndex,
@@ -29,7 +33,7 @@ JAFW.Apps.std_Pager.HANDLER 'index',
                 pageElement=$s('.PageIndex[data-idx="'+(a.currentPage+1)+'"]',@parentNode)
                 addUniqueClass(pageElement,'Selected',@parentNode)
                 a.pageChange(a.currentPage+1)
-        @pageChange(1)
+        @pageChange(pageIndex)
     pageChange:(pageIndex)->
         startIndex=(pageIndex-1)* @itemsPerPage
         amount=pageIndex* @itemsPerPage

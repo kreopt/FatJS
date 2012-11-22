@@ -71,15 +71,16 @@ class Window
             overlay.style.height=window.innerHeight+'px'
             overlay.style.width=window.innerWidth+'px'
         window.addEventListener('resize',resize,false)
-        overlay.innerHTML="""<div class="WINDOW #{cls}" id="WIN_#{id}" data-id="#{id}">
+        overlay.innerHTML="""<div class="WINDOW #{cls}" id="WIN_#{id}" data-id="#{id}" draggable="true">
                           <header class="WindowHead"><span style="padding-left: 20px;font-weight: bold">#{title}</span>
-                          <img class="CloseWindow" style="float: right" class="point" height="16" src="#{JAFWConf.img_dir}Icons/cross.svg"/>
+                          <img class="CloseWindow" style="float: right;cursor:pointer" class="point" height="16" src="#{JAFWConf.img_dir}Icons/cross.svg"/>
                           </header><section class="Content"></section></div>
                           """
         a=@
         $s('.CloseWindow',overlay).onclick= ->a.close(@parentNode.parentNode.dataset['id'])
         JAFW.run($s('.Content',overlay),app,args)
         $s('body').appendChild(overlay)
+
     close:(sWindowId)->
         removeNodesBySelector """.Overlay[data-id="#{sWindowId}"]"""
 JAFW.__Register('WinMan',Window)
