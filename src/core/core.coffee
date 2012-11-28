@@ -254,6 +254,18 @@ window.EMIT=(sSignal,oArgs)->invoke(sSignal,oArgs)
 window.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
     CONNECT(sSignal+'=',sSlot,oSender)
     EMIT(sSignal,oArgs)
+
+class Signal
+    constructor:(@context,@name,@maxHandlers=-1)->@
+    setMaxHandlers:(@maxHandlers=-1)->@
+    tunnel:(@tunnelName)->@
+    emit:(args)->EMIT(@name,args);return @
+    emitAndWait:(args)->EMIT_AND_WAIT(@context,@name,args,@name+'=');return @
+    _serialize:()->
+class SigHandler
+    constructor:(@context,@sigName,@handler)->
+    _deserialize:()->
+
 # Вид URL: #/appName:view/urlencode(param1)/...
 # Запуск взаимоисключающих приложений в один контейнер
 class Launcher
@@ -283,6 +295,7 @@ class Launcher
 JAFWCore::__Register('Url',URL)
 JAFWCore::__Register('Ajax',Ajax)
 JAFWCore::__Register('Static',Staticdata)
+JAFWCore::__Register('Signal',Signal)
 JAFWCore::__Register('Apps',AppEnvironment)
 JAFWCore::__Register('Launcher',Launcher)
 window.JAFW=new JAFWCore()
