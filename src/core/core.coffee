@@ -56,6 +56,7 @@ class AppEnvironment
         class App
             __name:appName
             handlers:{}
+            running:[]
             HANDLER:(name,body)->
                 body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args)
                 body.__appName=appName
@@ -64,7 +65,10 @@ class AppEnvironment
                     for p of body
                         @[p]=body[p]
                     undefined
-
+            destroy:->
+                while (handler=AppEnvironment::_registered[appName].running.shift())
+                    handler.__container?.innerHTML=''
+                    handler.destroy?()
             put:(selector,blockName,args)->
                 args={} if not args
 
@@ -77,6 +81,7 @@ class AppEnvironment
 
                 # DOM wrappers
                 ((handler,container)->
+                    handler.__container=container
                     handler.__HID=JAFW.__nextID()
                     handler.$s=(selector)->$s(selector,container)
                     handler.$a=(selector)->$a(selector,container)
@@ -99,8 +104,9 @@ class AppEnvironment
                             container.innerHTML=style+RenderEngine.render(@__name+':'+blockName,args)
 
                     handler.init(container,args)
-
+                AppEnvironment::_registered[appName].running.push(handler)
                 handler.preRender(init,args)
+
         AppEnvironment::_registered[appName]=new App()
         Object.defineProperty(AppEnvironment::,appName,{
             get:->AppEnvironment::_registered[appName]
