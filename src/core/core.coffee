@@ -251,6 +251,9 @@ window.CONNECT=(sSignal,sSlot,oReceiver)->
 # oSender - отправитель
 window.EMIT=(sSignal,oArgs)->invoke(sSignal,oArgs)
 
+window.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
+    CONNECT(sSignal+'=',sSlot,oSender)
+    EMIT(sSignal,oArgs)
 # Вид URL: #/appName:view/urlencode(param1)/...
 # Запуск взаимоисключающих приложений в один контейнер
 class Launcher
@@ -261,6 +264,7 @@ class Launcher
         @sel='body'
         # обработчик изменения хеша в адресной строке
         window.onhashchange= =>
+            #TODO: call destroy for running views
             [app,args]=window.location.hash.substr(2).split('/')
             JAFW.run(@sel,app,JAFW.Url.decode(args))
         window.onpopstate=(e)=>
