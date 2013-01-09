@@ -1,4 +1,8 @@
 RenderEngine=new jSmart()
+
+assert=(exp,message='')->
+    throw message if not exp
+
 class window.JAFWCore
     _uid:0
     _mods:{}
@@ -59,7 +63,7 @@ class AppEnvironment
             runningHandlers:{}
             HANDLER:(name,body)->
                 a=@
-                body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args,body.__HID)
+                body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args,body.__id__)
                 body.__app__=appName
                 if not body.preRender?
                     body.preRender=(r,args)->r(args)
@@ -68,11 +72,11 @@ class AppEnvironment
                     if @destroy?
                         @destroy()
                     # Вызов деструкторов потомков
-                    for c in a.runningHandlers[@__HID]
+                    for c in a.runningHandlers[@__id__]
                         c.__destroy__(true)
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
-                    delete a.runningHandlers[@__HID]
+                    delete a.runningHandlers[@__id__]
                 AppEnvironment::_registered[appName].handlers[name]=->
                     for p of body
                         @[p]=body[p]
@@ -89,7 +93,7 @@ class AppEnvironment
                 @runningHandlers[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
                 handler=@runningHandlers[hid]
                 handler.__name__=blockName
-                handler.__HID=hid
+                handler.__id__=hid
                 handler.__parent__=hid
                 handler.__children__=[]
                 handler.__container__=container
@@ -211,7 +215,25 @@ class Ajax
         request.setRequestHeader("Content-type", "application/x-www-form-urlencoded") if sMethod=='POST'
         request.send(requestData)
 
+###
+    СИГНАЛЫ
 
+    Именование:
+        sigName ::= [typeDescriptor] [a-zA-Z._]+
+        typeDescriptor ::= [=@]{,1}
+    Типы:
+    sigName - простой сигнал, отправляется на локальные объекты, подписка является постоянной
+    =sigName - временный сигнал. отправляется на локальные объекты, подписка уничтожается после вызова
+    @sigName - глобальный сигнал - пересылается на локальные объекты и на сервер
+###
+signalModifiers=['@','=']
+parseSignal=(sSignal)->
+    [signal,emitter]=sSignal.split(':')
+    name=signal.replace(new RegExp('['+signalModifiers.join('')+']'),'')
+    modifier=if signal[0] in signalModifiers then signal[0] else ''
+    return {name,emitter,modifier}
+validateSignal=(sSignal)->
+    assert(sSignal.match('^[=@]?[a-zA-Z][a-zA-Z_.]*$'),'Bad signal name: '+sSignal)
 # Таблица соединений сигналов и объектов
 __connectionTable={}
 addConnection=(sSignal,sSlot,oReceiver,fSlot)->
@@ -231,9 +253,9 @@ removeConnection=(sSignal,sSlot,oReceiver)->
         return
     if Object.keys(__connectionTable[sSignal][objectName].slots).length==0
         delete __connectionTable[sSignal][objectName]
-        if Object.keys(__connectionTable[sSignal]).length
+        if Object.keys(__connectionTable[sSignal]).length==0
             delete __connectionTable[sSignal]
-invoke=(sSignal,oData)->
+invoke=(sSignal,oData,emitResult=false)->
     # Глобальная рассылка (не только на клиент, но и на сервер и дочерние окна)
     if sSignal[0]=='@'
         sSignal=sSignal[1..]
@@ -242,23 +264,39 @@ invoke=(sSignal,oData)->
                 EMIT(oResponseSignal.name,oResponseSignal.data)
     # TODO: отправлять на дочерние окна
     #[signal,uid]=sSignal.split(':')
+    sigData=parseSignal(sSignal)
+    temporary=(sigData.modifier=='=')
+    invokeSlots=(connectionList)->
+        for appName,connectionInfo of connectionList
+            for slotName,slot of connectionInfo.slots
+                res=slot.call(connectionInfo.instance,oData)
+                if sigData.emitter and emitResult
+                    EMIT '='+sigData.name,res,sigData.emitter
+                #Удаляем временные сигналы
+                if temporary
+                    removeConnection('='+sigData.name+(if sigData.emitter then ':'+sigData.emitter else ''),slotName,connectionInfo.instance)
+        return
     # Локальная рассылка
     if __connectionTable[sSignal]
-        for appName,connectionInfo of __connectionTable[sSignal]
-            for slotName,slot of connectionInfo.slots
-                #if (not uid?) or (uid? and uid==connectionInfo.instance.UID)
-                    slot.call(connectionInfo.instance,oData)
+        invokeSlots(__connectionTable[sSignal])
+    else if __connectionTable[sigData.modifier+sigData.name]
+        invokeSlots(__connectionTable[sigData.modifier+sigData.name])
+
 # Удалить подписку на сигнал
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала
 # oReceiver - объект, для которого выполнить отключение
-window.DISCONNECT=(sSignal,sSlot,oReceiver)->
+window.DISCONNECT=(sSignal,sSlot,oReceiver,UID=null)->
+    validateSignal(sSignal)
+    sSignal+=(':'+UID) if UID
     removeConnection(sSignal,sSlot,oReceiver)
 # Подписать объект на сигнал. Возвращает название обработчика, которое можно использовать для отключение
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала, содержащегося в oReceiver. Если sSlot - функция, генерируется уникальный ID
 # oReceiver - объект, для которого выполнить подключение. oReceiver должен иметь свойство toString, возвращающее уникальное имя объекта
-window.CONNECT=(sSignal,sSlot,oReceiver)->
+window.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
+    validateSignal(sSignal)
+    sSignal+=(':'+UID) if UID
     # Если sSlot - функция, генерируем UID и подписываем объект на анонимную функцию
     if (typeof sSlot == typeof(->))
         fSlot=sSlot
@@ -270,11 +308,15 @@ window.CONNECT=(sSignal,sSlot,oReceiver)->
 # sSignal - название сигнала
 # oArgs - параметры сигнала
 # oSender - отправитель
-window.EMIT=(sSignal,oArgs)->invoke(sSignal,oArgs)
-
+window.EMIT=(sSignal,oArgs,oSender=null,emitResult=false)->
+    validateSignal(sSignal)
+    sSignal=(sSignal+':'+(if oSender.__id__? then oSender.__id__ else oSender.toString())) if oSender
+    invoke(sSignal,oArgs,emitResult)
 window.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
-    CONNECT(sSignal+'=',sSlot,oSender)
-    EMIT(sSignal,oArgs)
+    sSignal.replace('=','')
+    validateSignal(sSignal)
+    CONNECT('='+sSignal,sSlot,oSender,oSender.__id__)
+    EMIT(sSignal,oArgs,oSender,true)
 
 class Signal
     constructor:(@context,@name,@maxHandlers=-1)->@
