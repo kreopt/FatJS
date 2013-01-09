@@ -90,6 +90,7 @@ class AppEnvironment
                         for c in a.runningHandlers[@__HID]
                             c.__destroy__()
                         delete a.runningHandlers[@__HID]
+                    handler.__container__=container
                     handler.$s=(selector)->$s(selector,container)
                     handler.$a=(selector)->$a(selector,container)
                     handler.$S=(selector)->$S(selector,container)
@@ -111,8 +112,9 @@ class AppEnvironment
                             container.innerHTML=style+RenderEngine.render(@__name__+':'+blockName,args)
 
                     handler.init(container,args)
-
+                AppEnvironment::_registered[appName].running.push(handler)
                 handler.preRender(init,args)
+
         AppEnvironment::_registered[appName]=new App()
         Object.defineProperty(AppEnvironment::,appName,{
             get:->AppEnvironment::_registered[appName]
@@ -263,6 +265,21 @@ window.CONNECT=(sSignal,sSlot,oReceiver)->
 # oSender - отправитель
 window.EMIT=(sSignal,oArgs)->invoke(sSignal,oArgs)
 
+window.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
+    CONNECT(sSignal+'=',sSlot,oSender)
+    EMIT(sSignal,oArgs)
+
+class Signal
+    constructor:(@context,@name,@maxHandlers=-1)->@
+    setMaxHandlers:(@maxHandlers=-1)->@
+    tunnel:(@tunnelName)->@
+    emit:(args)->EMIT(@name,args);return @
+    emitAndWait:(args)->EMIT_AND_WAIT(@context,@name,args,@name+'=');return @
+    _serialize:()->
+class SigHandler
+    constructor:(@context,@sigName,@handler)->
+    _deserialize:()->
+
 # Вид URL: #/appName:view/urlencode(param1)/...
 # Запуск взаимоисключающих приложений в один контейнер
 class Launcher
@@ -292,6 +309,7 @@ class Launcher
 JAFWCore::__Register('Url',URL)
 JAFWCore::__Register('Ajax',Ajax)
 JAFWCore::__Register('Static',Staticdata)
+JAFWCore::__Register('Signal',Signal)
 JAFWCore::__Register('Apps',AppEnvironment)
 JAFWCore::__Register('Launcher',Launcher)
 window.JAFW=new JAFWCore()

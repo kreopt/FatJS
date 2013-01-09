@@ -10,13 +10,12 @@ class window.BJSON
         rem=iNum-binDegNum
         [binDeg,rem,binDegNum]
     dontUseLeftBranch:(iMaxFreq,iOtherFreq,iSymbolCount)->
-        [t,k,tDeg]=@binDegrees(iSymbolCount-1)
-        [q,r,qDeg]=@binDegrees(iSymbolCount)
-        aWeight=(iSymbolCount-1)
-        a1=Math.floor(((tDeg-k)*(t+1)+(iSymbolCount-tDeg+k-1)*(t+2)) / (iSymbolCount-1))
-        a2=if (iSymbolCount-tDeg+k-1) then (t+2) else (t+1)
-        b1=Math.floor(((qDeg-r)*(q)+(iSymbolCount-qDeg+r)*(q+1)) / iSymbolCount)
-        b2=if (iSymbolCount-qDeg+r) then (q+1) else (q)
+        [binDegree1,remainder1,modulus1]=@binDegrees(iSymbolCount-1)
+        [binDegree2,remainder2,modulus2]=@binDegrees(iSymbolCount)
+        a1=Math.floor(((modulus1-remainder1)*(binDegree1+1)+(remainder1<<1)*(binDegree1+2)) / (iSymbolCount-1))
+        a2=binDegree1+if remainder1<<1 then 2 else 1
+        b1=Math.floor(((modulus2-remainder2)*(binDegree2)+(remainder2<<1)*(binDegree2+1)) / iSymbolCount)
+        b2=binDegree2+if remainder2<<1 then 1 else 0
         return iMaxFreq+iOtherFreq*a1+(iOtherFreq%(iSymbolCount-1))*a2<(iMaxFreq+iOtherFreq)*b1+((iMaxFreq+iOtherFreq)%iSymbolCount)*b2
     freqSum:(freqList,freq)->
         sum=0
@@ -42,8 +41,8 @@ class window.BJSON
             oTree[1]={}
             oTree[0]={}
             aOtherFreqSyms.unshift(sMaxFreqSym)
-            leftFreqList=aOtherFreqSyms.slice(0,aOtherFreqSyms.length/2)
-            rightFreqList=aOtherFreqSyms.slice(aOtherFreqSyms.length/2)
+            leftFreqList=aOtherFreqSyms.slice(0,aOtherFreqSyms.length / 2)
+            rightFreqList=aOtherFreqSyms.slice(aOtherFreqSyms.length / 2)
             @createTree(leftFreqList[0],leftFreqList.slice(1),leftFreqList.length,oFrequencies,oTree[0],(iPath<<1),oPath,iLevel)
             if oTree[0][1]==undefined and typeof(oTree[0][0])==typeof('')
                 oTree[0]=oTree[0][0]
@@ -108,7 +107,7 @@ class window.BJSON
         path={}
         pathStr=sString.slice(1,sString[0].charCodeAt(0)+1)
         encoded=sString.slice(sString[0].charCodeAt(0)+1)
-        for i in [0...pathStr.length/2]
+        for i in [0...pathStr.length / 2]
             path[pathStr[2*i+1].charCodeAt(0)]=pathStr[2*i]
         #decoding..
         tokensLen=aTokens.length

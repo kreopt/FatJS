@@ -5,7 +5,7 @@ JAFW.Apps.std_SideMenu.HANDLER 'index',
         addClass(@container,'JAFW_SideMenu')
 
         selectItem=(item,first)->
-            old=$('Selected',$s("##{oConfig.id}")).dataset?['page']
+            old=$s('.Selected',$s("##{oConfig.id}")).dataset?['page']
             addUniqueClass(item,'Selected',$s("##{oConfig.id}"))
             if first
                 EMIT('MENU_STARTED',{oldApp:old,newApp:item.dataset['page']})
