@@ -58,8 +58,21 @@ class AppEnvironment
             handlers:{}
             runningHandlers:{}
             HANDLER:(name,body)->
+                a=@
                 body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args,body.__HID)
                 body.__app__=appName
+                if not body.preRender?
+                    body.preRender=(r,args)->r(args)
+                body.__destroy__=()->
+                    # Пользовательский деструктор
+                    if @destroy?
+                        @destroy()
+                    # Вызов деструкторов потомков
+                    for c in a.runningHandlers[@__HID]
+                        c.__destroy__(true)
+                    if @__container__?.innerHTML?
+                        @__container__.innerHTML=''
+                    delete a.runningHandlers[@__HID]
                 AppEnvironment::_registered[appName].handlers[name]=->
                     for p of body
                         @[p]=body[p]
@@ -79,27 +92,19 @@ class AppEnvironment
                 handler.__HID=hid
                 handler.__parent__=hid
                 handler.__children__=[]
+                handler.__container__=container
                 handler.toString=->@__app__+":"+@__name__
                 if parentHid of @runningHandlers
                     @runningHandlers[parentHid].__children__.push(handler)
-                a=@
-                # DOM wrappers
+                # Обертки событий DOM для обработчика
+                # TODO: installDOMWrappers(handler)
                 ((handler,container)->
-                    handler.__destroy__=->
-                        #destroy children
-                        for c in a.runningHandlers[@__HID]
-                            c.__destroy__()
-                        delete a.runningHandlers[@__HID]
-                    handler.__container__=container
                     handler.$s=(selector)->$s(selector,container)
                     handler.$a=(selector)->$a(selector,container)
                     handler.$S=(selector)->$S(selector,container)
                     handler.$A=(selector)->$A(selector,container)
                     handler.addEventBySelector=(sSelector,sEventName,fCallback)->addEventBySelector(sSelector,container,sEventName,fCallback)
                 )(handler,container)
-
-                if not handler.preRender?
-                    handler.preRender=(r,args)->r(args)
 
                 init=(data)=>
                     for p of data
@@ -112,8 +117,10 @@ class AppEnvironment
                             container.innerHTML=style+RenderEngine.render(@__name__+':'+blockName,args)
 
                     handler.init(container,args)
-                AppEnvironment::_registered[appName].running.push(handler)
+                #AppEnvironment::_registered[appName].running.push(handler)
+                handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
                 handler.preRender(init,args)
+
 
         AppEnvironment::_registered[appName]=new App()
         Object.defineProperty(AppEnvironment::,appName,{
