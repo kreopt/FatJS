@@ -1,4 +1,0 @@
-APP_NAME=ScrollGrid
-JS=
-CSS=
-HTML=

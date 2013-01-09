@@ -1,4 +1,0 @@
-APP_NAME=TabControl
-JS=
-CSS=
-HTML=

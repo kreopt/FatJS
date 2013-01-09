@@ -54,18 +54,17 @@ class AppEnvironment
     __Register:(appName)->
         throw('Application already registered') if appName in AppEnvironment::_registered
         class App
-            __name:appName
+            __name__:appName
             handlers:{}
+            runningHandlers:{}
             HANDLER:(name,body)->
-                body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args)
-                body.__appName=appName
-                body.toString=->@__appName
+                body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args,body.__HID)
+                body.__app__=appName
                 AppEnvironment::_registered[appName].handlers[name]=->
                     for p of body
                         @[p]=body[p]
                     undefined
-
-            put:(selector,blockName,args)->
+            put:(selector,blockName,args,parentHid=0)->
                 args={} if not args
 
                 if typeof(selector)==typeof({})
@@ -73,11 +72,24 @@ class AppEnvironment
                 else
                     container=if selector then $s(selector) else null
 
-                handler=new AppEnvironment::_registered[appName].handlers[blockName](selector)
-
+                hid=JAFW.__nextID()
+                @runningHandlers[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
+                handler=@runningHandlers[hid]
+                handler.__name__=blockName
+                handler.__HID=hid
+                handler.__parent__=hid
+                handler.__children__=[]
+                handler.toString=->@__app__+":"+@__name__
+                if parentHid of @runningHandlers
+                    @runningHandlers[parentHid].__children__.push(handler)
+                a=@
                 # DOM wrappers
                 ((handler,container)->
-                    handler.__HID=JAFW.__nextID()
+                    handler.__destroy__=->
+                        #destroy children
+                        for c in a.runningHandlers[@__HID]
+                            c.__destroy__()
+                        delete a.runningHandlers[@__HID]
                     handler.$s=(selector)->$s(selector,container)
                     handler.$a=(selector)->$a(selector,container)
                     handler.$S=(selector)->$S(selector,container)
@@ -92,11 +104,11 @@ class AppEnvironment
                     for p of data
                         args[p] = data[p]
                     if container
-                        if Staticdata::_loaded[@__name]?.html[blockName]?
+                        if Staticdata::_loaded[@__name__]?.html[blockName]?
                             args.config=JAFWConf
-                            css=if Staticdata::_loaded[@__name]?.css[blockName]? then Staticdata::_loaded[@__name].css[blockName] else ''
+                            css=if Staticdata::_loaded[@__name__]?.css[blockName]? then Staticdata::_loaded[@__name__].css[blockName] else ''
                             style='<style scoped>'+css+'</style>'
-                            container.innerHTML=style+RenderEngine.render(@__name+':'+blockName,args)
+                            container.innerHTML=style+RenderEngine.render(@__name__+':'+blockName,args)
 
                     handler.init(container,args)
 
@@ -261,6 +273,7 @@ class Launcher
         @sel='body'
         # обработчик изменения хеша в адресной строке
         window.onhashchange= =>
+            #TODO: call destroy for running views
             [app,args]=window.location.hash.substr(2).split('/')
             JAFW.run(@sel,app,JAFW.Url.decode(args))
         window.onpopstate=(e)=>
