@@ -3,7 +3,7 @@ RenderEngine=new jSmart()
 assert=(exp,message='')->
     throw message if not exp
 
-class window.JAFWCore
+class self.JAFWCore
     _uid:0
     _mods:{}
     _tpls:{}
@@ -61,18 +61,26 @@ class AppEnvironment
             __name__:appName
             handlers:{}
             runningHandlers:{}
+            toString:->@__name__
+            constructor:->
+                CONNECT 'jafw.Apps.'+@__name__+'.destroy','__destroy__',@
+            __destroy__:->
+                for hid,handler of @runningHandlers
+                    handler.__destroy__()
             HANDLER:(name,body)->
                 a=@
-                body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args,body.__id__)
+                body.put=(selector,blockName,args)->a.put.call(a,selector,blockName,args, @__id__)
                 body.__app__=appName
                 if not body.preRender?
                     body.preRender=(r,args)->r(args)
                 body.__destroy__=()->
+                    #TODO: удалять из списка потомков
+                    DISCONNECT('*','*',@)
                     # Пользовательский деструктор
                     if @destroy?
                         @destroy()
                     # Вызов деструкторов потомков
-                    for c in a.runningHandlers[@__id__]
+                    for c in a.runningHandlers[@__id__].__children__
                         c.__destroy__(true)
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
@@ -81,7 +89,7 @@ class AppEnvironment
                     for p of body
                         @[p]=body[p]
                     undefined
-            put:(selector,blockName,args,parentHid=0)->
+            put:(selector,blockName,args,parentHid=null)->
                 args={} if not args
 
                 if typeof(selector)==typeof({})
@@ -94,22 +102,14 @@ class AppEnvironment
                 handler=@runningHandlers[hid]
                 handler.__name__=blockName
                 handler.__id__=hid
-                handler.__parent__=hid
+                handler.__parent__=parentHid
                 handler.__children__=[]
                 handler.__container__=container
                 handler.toString=->@__app__+":"+@__name__
                 if parentHid of @runningHandlers
                     @runningHandlers[parentHid].__children__.push(handler)
                 # Обертки событий DOM для обработчика
-                # TODO: installDOMWrappers(handler)
-                ((handler,container)->
-                    handler.$s=(selector)->$s(selector,container)
-                    handler.$a=(selector)->$a(selector,container)
-                    handler.$S=(selector)->$S(selector,container)
-                    handler.$A=(selector)->$A(selector,container)
-                    handler.addEventBySelector=(sSelector,sEventName,fCallback)->addEventBySelector(sSelector,container,sEventName,fCallback)
-                )(handler,container)
-
+                installDOMWrappers(handler,container)
                 init=(data)=>
                     for p of data
                         args[p] = data[p]
@@ -124,6 +124,7 @@ class AppEnvironment
                 #AppEnvironment::_registered[appName].running.push(handler)
                 handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
                 handler.preRender(init,args)
+                return handler
 
 
         AppEnvironment::_registered[appName]=new App()
@@ -154,7 +155,7 @@ class URL
     # Получение объекта из строки URL
     # sUrlStr - строка URL. Если sUrlStr не определена, берется текущая URL строка браузера.
     decode:(sUrlStr)->
-        sUrlStr = window.location.href.slice(window.location.href.indexOf('?') + 1) if sUrlStr==undefined
+        sUrlStr = self.location.href.slice(self.location.href.indexOf('?') + 1) if sUrlStr==undefined
         hashes=sUrlStr.split('&')
         vars={}
         # Разбор ключа, создание дерева объекта
@@ -225,15 +226,16 @@ class Ajax
     sigName - простой сигнал, отправляется на локальные объекты, подписка является постоянной
     =sigName - временный сигнал. отправляется на локальные объекты, подписка уничтожается после вызова
     @sigName - глобальный сигнал - пересылается на локальные объекты и на сервер
+    * - любой сигнал
 ###
-signalModifiers=['@','=']
+signalModifiers=['@','=','*']
 parseSignal=(sSignal)->
     [signal,emitter]=sSignal.split(':')
     name=signal.replace(new RegExp('['+signalModifiers.join('')+']'),'')
     modifier=if signal[0] in signalModifiers then signal[0] else ''
     return {name,emitter,modifier}
 validateSignal=(sSignal)->
-    assert(sSignal.match('^[=@]?[a-zA-Z][a-zA-Z_.]*$'),'Bad signal name: '+sSignal)
+    assert(sSignal.match('^['+signalModifiers.join('')+']?[a-zA-Z][a-zA-Z_.]*$||^\*$'),'Bad signal name: '+sSignal)
 # Таблица соединений сигналов и объектов
 __connectionTable={}
 addConnection=(sSignal,sSlot,oReceiver,fSlot)->
@@ -247,6 +249,11 @@ addConnection=(sSignal,sSlot,oReceiver,fSlot)->
     sSlot
 removeConnection=(sSignal,sSlot,oReceiver)->
     objectName=oReceiver.toString()
+    if sSignal=='*'
+        for sig of __connectionTable
+            delete __connectionTable[sig][objectName] if __connectionTable[sig]?[objectName]?
+        return
+
     if __connectionTable[sSignal]?[objectName]?.slots[sSlot]
         delete __connectionTable[sSignal][objectName].slots[sSlot]
     else
@@ -269,8 +276,8 @@ invoke=(sSignal,oData,emitResult=false)->
     invokeSlots=(connectionList)->
         for appName,connectionInfo of connectionList
             for slotName,slot of connectionInfo.slots
-                res=slot.call(connectionInfo.instance,oData)
-                if sigData.emitter and emitResult
+                res=slot.call(connectionInfo.instance,oData,sigData.emitter)
+                if sigData.emitter and emitResult and res isnt null
                     EMIT '='+sigData.name,res,sigData.emitter
                 #Удаляем временные сигналы
                 if temporary
@@ -286,7 +293,7 @@ invoke=(sSignal,oData,emitResult=false)->
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала
 # oReceiver - объект, для которого выполнить отключение
-window.DISCONNECT=(sSignal,sSlot,oReceiver,UID=null)->
+self.DISCONNECT=(sSignal,sSlot,oReceiver,UID=null)->
     validateSignal(sSignal)
     sSignal+=(':'+UID) if UID
     removeConnection(sSignal,sSlot,oReceiver)
@@ -294,7 +301,7 @@ window.DISCONNECT=(sSignal,sSlot,oReceiver,UID=null)->
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала, содержащегося в oReceiver. Если sSlot - функция, генерируется уникальный ID
 # oReceiver - объект, для которого выполнить подключение. oReceiver должен иметь свойство toString, возвращающее уникальное имя объекта
-window.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
+self.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
     validateSignal(sSignal)
     sSignal+=(':'+UID) if UID
     # Если sSlot - функция, генерируем UID и подписываем объект на анонимную функцию
@@ -308,11 +315,11 @@ window.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
 # sSignal - название сигнала
 # oArgs - параметры сигнала
 # oSender - отправитель
-window.EMIT=(sSignal,oArgs,oSender=null,emitResult=false)->
+self.EMIT=(sSignal,oArgs,oSender=null,emitResult=false)->
     validateSignal(sSignal)
     sSignal=(sSignal+':'+(if oSender.__id__? then oSender.__id__ else oSender.toString())) if oSender
     invoke(sSignal,oArgs,emitResult)
-window.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
+self.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
     sSignal.replace('=','')
     validateSignal(sSignal)
     CONNECT('='+sSignal,sSlot,oSender,oSender.__id__)
@@ -338,22 +345,22 @@ class Launcher
         CONNECT('LAUNCHER_BACK','back',@)
         @sel='body'
         # обработчик изменения хеша в адресной строке
-        window.onhashchange= =>
+        self.onhashchange= (e)=>
             #TODO: call destroy for running views
-            [app,args]=window.location.hash.substr(2).split('/')
+            [app,args]=e.newURL.split('#')[1].substr(1).split('/')
             JAFW.run(@sel,app,JAFW.Url.decode(args))
-        window.onpopstate=(e)=>
+        self.onpopstate=(e)=>
             @sel=e.state
     back:->
-        window.history.back()
+        self.history.back()
     push:({cont,app,args})->
-        window.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
-        window.onhashchange()
+        self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
     repl:({cont,app,args})->
-        window.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
-        window.onhashchange()
+        self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
 
 JAFWCore::__Register('Url',URL)
 JAFWCore::__Register('Ajax',Ajax)
@@ -361,18 +368,22 @@ JAFWCore::__Register('Static',Staticdata)
 JAFWCore::__Register('Signal',Signal)
 JAFWCore::__Register('Apps',AppEnvironment)
 JAFWCore::__Register('Launcher',Launcher)
-window.JAFW=new JAFWCore()
+self.JAFW=new JAFWCore()
 
 ##
 # Запуск блока приложения
 ##
+currentApp=null
 JAFW.run=(selector,appSignature,args)->
     [ns,name]=appSignature.split('::')
     [ns,name]=['',ns] if not name
     [appName,blockName]=name.split(':')
     appName=if ns then ns+':'+appName else appName
     appAccess=appName.replace(':','_')
-    _run=->JAFW.Apps[appAccess].put(selector,blockName,args)
+    _run=->
+        #if currentApp
+        #    currentApp.__destroy__()
+        currentApp=JAFW.Apps[appAccess].put(selector,blockName,args)
     if appAccess not of JAFW.Apps._registered
         JAFW.Apps.__Register(appAccess)
         JAFW.Apps.load appName,->
