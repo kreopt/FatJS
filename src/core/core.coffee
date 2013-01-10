@@ -79,6 +79,7 @@ class AppEnvironment
                     # Пользовательский деструктор
                     if @destroy?
                         @destroy()
+                    return if not a.runningHandlers[@__id__]?
                     # Вызов деструкторов потомков
                     for c in a.runningHandlers[@__id__].__children__
                         c.__destroy__(true)
@@ -235,7 +236,8 @@ parseSignal=(sSignal)->
     modifier=if signal[0] in signalModifiers then signal[0] else ''
     return {name,emitter,modifier}
 validateSignal=(sSignal)->
-    assert(sSignal.match('^['+signalModifiers.join('')+']?[a-zA-Z][a-zA-Z_.]*$||^\*$'),'Bad signal name: '+sSignal)
+    if sSignal!='*'
+        assert(sSignal.match('^['+signalModifiers.join('')+']?[a-zA-Z][a-zA-Z_.]*$'),'Bad signal name: '+sSignal)
 # Таблица соединений сигналов и объектов
 __connectionTable={}
 addConnection=(sSignal,sSlot,oReceiver,fSlot)->
