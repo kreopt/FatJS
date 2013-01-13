@@ -346,26 +346,36 @@ class Launcher
         CONNECT('LAUNCHER_REPLACE','repl',@)
         CONNECT('LAUNCHER_BACK','back',@)
         @sel='body'
-        @currentApp={}
+        @containerApps={}
+        @currentView=null
+        @storedStates={}
         # обработчик изменения хеша в адресной строке
         self.onhashchange= (e)=>
             [app,args]=e.newURL.split('#')[1].substr(1).split('/')
             [appName,view]=app.split(':')
-            @currentApp[@sel].__destroy__() if @currentApp[@sel]? and appName!= @currentApp[@sel].__app__
+            @containerApps[@sel].__destroy__() if @containerApps[@sel]? and appName!= @containerApps[@sel].__app__
             storeCA= (a)=>
-                if (not @currentApp[@sel]?) or (@currentApp[@sel].__app__!= a.__app__)
-                    @currentApp[@sel]=a
+                @currentView=a
+                # Восстанавливаем последнее состояние представления
+                name=a.__app__+':'+a.__name__
+                if @storedStates[name]?
+                    @currentView?.__restore__?(@storedStates[name])
+                    delete @storedStates[name]
+                if (not @containerApps[@sel]?) or (@containerApps[@sel].__app__!= a.__app__)
+                    @containerApps[@sel]=a
+            # сохраняем последнее состояние представления, если есть функция сохранения
+            @storedStates[@currentView.__app__+':'+@currentView.__name__]=@currentView.__store__() if @currentView?.__store__?
             JAFW.run(@sel,app,JAFW.Url.decode(args),storeCA)
         self.onpopstate=(e)=>
             @sel=e.state
     back:->
         self.history.back()
     push:({cont,app,args})->
-        self.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
         self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
     repl:({cont,app,args})->
-        self.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
         self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
 
@@ -380,7 +390,7 @@ self.JAFW=new JAFWCore()
 ##
 # Запуск блока приложения
 ##
-currentApp=null
+containerApps=null
 JAFW.run=(selector,appSignature,args,onload)->
     [ns,name]=appSignature.split('::')
     [ns,name]=['',ns] if not name
