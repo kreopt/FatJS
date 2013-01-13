@@ -56,7 +56,7 @@ class AppEnvironment
         class App
             __name:appName
             handlers:{}
-            running:[]
+            running:[] #TODO: id-based lists
             HANDLER:(name,body)->
                 body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args)
                 body.__appName=appName
@@ -66,6 +66,7 @@ class AppEnvironment
                         @[p]=body[p]
                     undefined
             destroy:->
+                #TODO: destroy by app id
                 while (handler=AppEnvironment::_registered[appName].running.shift())
                     handler.__container?.innerHTML=''
                     handler.destroy?()
@@ -315,6 +316,8 @@ JAFW.run=(selector,appSignature,args)->
     [appName,blockName]=name.split(':')
     appName=if ns then ns+':'+appName else appName
     appAccess=appName.replace(':','_')
+    uid=JAFW.__nextID()
+    #TODO: create new instance of application with uid
     _run=->JAFW.Apps[appAccess].put(selector,blockName,args)
     if appAccess not of JAFW.Apps._registered
         JAFW.Apps.__Register(appAccess)
@@ -322,3 +325,4 @@ JAFW.run=(selector,appSignature,args)->
             _run()
     else
         _run()
+    uid
