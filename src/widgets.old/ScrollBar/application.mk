@@ -1,4 +1,0 @@
-APP_NAME=ScrollBar
-JS=
-CSS=
-HTML=

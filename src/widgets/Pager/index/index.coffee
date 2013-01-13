@@ -1,6 +1,6 @@
 JAFW.Apps.std_Pager.HANDLER 'index',
     preRender:(renderCallback,{@pageIndex,@navId,@itemCount,@itemsPerPage})->
-        CONNECT 'RESET_PAGER:'+@navId,'reset',@
+        CONNECT 'RESET_PAGER','reset',@,@navId
         @render=renderCallback
         @reset({@pageIndex,@navId,@itemCount,@itemsPerPage})
     reset:({pageIndex,itemCount,itemsPerPage})->
@@ -38,4 +38,4 @@ JAFW.Apps.std_Pager.HANDLER 'index',
         startIndex=(pageIndex-1)* @itemsPerPage
         amount=pageIndex* @itemsPerPage
         @currentPage=pageIndex
-        EMIT 'PAGE_SELECTED:'+ @navId,{startIndex,amount}
+        EMIT 'PAGE_SELECTED',{startIndex,amount},@navId
