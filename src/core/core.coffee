@@ -346,11 +346,16 @@ class Launcher
         CONNECT('LAUNCHER_REPLACE','repl',@)
         CONNECT('LAUNCHER_BACK','back',@)
         @sel='body'
+        @currentApp={}
         # обработчик изменения хеша в адресной строке
         self.onhashchange= (e)=>
-            #TODO: call destroy for running views
             [app,args]=e.newURL.split('#')[1].substr(1).split('/')
-            JAFW.run(@sel,app,JAFW.Url.decode(args))
+            [appName,view]=app.split(':')
+            @currentApp[@sel].__destroy__() if @currentApp[@sel]? and appName!= @currentApp[@sel].__app__
+            storeCA= (a)=>
+                if (not @currentApp[@sel]?) or (@currentApp[@sel].__app__!= a.__app__)
+                    @currentApp[@sel]=a
+            JAFW.run(@sel,app,JAFW.Url.decode(args),storeCA)
         self.onpopstate=(e)=>
             @sel=e.state
     back:->
@@ -376,7 +381,7 @@ self.JAFW=new JAFWCore()
 # Запуск блока приложения
 ##
 currentApp=null
-JAFW.run=(selector,appSignature,args)->
+JAFW.run=(selector,appSignature,args,onload)->
     [ns,name]=appSignature.split('::')
     [ns,name]=['',ns] if not name
     [appName,blockName]=name.split(':')
@@ -385,11 +390,12 @@ JAFW.run=(selector,appSignature,args)->
     _run=->
         #if currentApp
         #    currentApp.__destroy__()
-        currentApp=JAFW.Apps[appAccess].put(selector,blockName,args)
+        JAFW.Apps[appAccess].put(selector,blockName,args)
     if appAccess not of JAFW.Apps._registered
         JAFW.Apps.__Register(appAccess)
         JAFW.Apps.load appName,->
-            _run()
+            a=_run()
+            onload(a) if onload?
     else
-        _run()
-    uid
+        a=_run()
+        onload(a) if onload?
