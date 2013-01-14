@@ -6,20 +6,20 @@ if not Element.prototype.hasOwnProperty('classList')
             a=@
             return {
             contains:(className)->
-                a.className.split(' ').indexOf(className)
+                String(a.className).split(' ').indexOf(className)+1
             add:(className)->
-                classList=a.className.split(' ')
+                classList=String(a.className).split(' ')
                 if not a.classList.contains(className)
                     classList.push(className)
                     a.className=classList.join('')
             remove:(className)->
-                classList=a.className.split(' ')
+                classList=String(a.className).split(' ')
                 classIndex=a.classList.contains(className)
                 if classIndex
-                    classList.splice(classIndex,1)
+                    classList.splice(classIndex-1,1)
                     a.className=classList.join('')
             toggle:(className)->
-                classList=a.className.split(' ')
+                classList=String(a.className).split(' ')-1
                 classIndex=classList.indexOf(className)
                 if classIndex
                     classList.splice(classIndex,1)
@@ -75,7 +75,7 @@ self.installDOMWrappers=(oHolder,DOMToplevelScope)->
     oHolder.$rmattr=(DOMNode,sAttr)->DOMNode.removeAttribute(sAttr)
     oHolder.$d=(DOMNode,sName,vValue=null)->
         # COMPATIBILITY
-        if not 'dataset' in DOMNode
+        if not ('dataset' in DOMNode)
             return DOMNode.getAttribute('data-'+sName) if not vValue?
             DOMNode.setAttribute('data-'+sName,vValue)
         else
