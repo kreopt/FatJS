@@ -20,9 +20,9 @@ JAFW.Apps.std_Pager.HANDLER 'index',
     init:(DOMContainer,{pageIndex,navId,pageCount,itemsPerPage})->
         a=@
         @addEventBySelector '.PageIndex','click',->
-            if a.currentPage!=Number(@dataset['idx'])
+            if a.currentPage!=Number($d(@,'idx'))
                 addUniqueClass(@,'Selected',@parentNode)
-                a.pageChange(Number(@dataset['idx']))
+                a.pageChange(Number($d(@,'idx')))
         @addEventBySelector '.PrevPage','click',->
             if a.currentPage>1
                 pageElement=$s('.PageIndex[data-idx="'+(a.currentPage-1)+'"]',@parentNode)

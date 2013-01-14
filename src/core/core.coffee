@@ -73,12 +73,17 @@ class AppEnvironment
                 body.__app__=appName
                 if not body.preRender?
                     body.preRender=(r,args)->r(args)
-                body.__destroy__=()->
-                    #TODO: удалять из списка потомков
+                body.__destroy__=(calledByParent=false)->
+                    # удаляем обработчик из списка потомков родителя
+                    if @__parent__ and (not calledByParent)
+                        children=a.runningHandlers[@__parent__].__children__
+                        for child,childIndex in children
+                            if child.__id__==@__id__
+                                a.runningHandlers[@__parent__].__children__.splice(childIndex,1)
+                                break
                     DISCONNECT('*','*',@)
                     # Пользовательский деструктор
-                    if @destroy?
-                        @destroy()
+                    @destroy() if @destroy?
                     return if not a.runningHandlers[@__id__]?
                     # Вызов деструкторов потомков
                     for c in a.runningHandlers[@__id__].__children__
@@ -371,11 +376,11 @@ class Launcher
     back:->
         self.history.back()
     push:({cont,app,args})->
-        self.history.pushState(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
         self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
     repl:({cont,app,args})->
-        self.history.pushState(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
         self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
 

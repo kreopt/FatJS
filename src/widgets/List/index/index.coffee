@@ -5,7 +5,7 @@ JAFW.Apps.std_List.HANDLER 'index',
         for item,i in items
             itemDOM=document.createElement('div')
             itemDOM.className='ListItem'
-            itemDOM.dataset['idx']=i
+            $d(itemDOM,'idx',i)
             JAFW.run itemDOM,view,item
             fragment.appendChild(itemDOM)
         DOMContainer.appendChild(fragment)

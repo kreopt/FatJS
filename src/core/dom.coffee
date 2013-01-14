@@ -1,4 +1,34 @@
 'use strict';
+# COMPATIBILITY
+if not Element.prototype.hasOwnProperty('classList')
+    Object.defineProperty(Element.prototype,'classList',{
+        get:->
+            a=@
+            return {
+            contains:(className)->
+                a.className.split(' ').indexOf(className)
+            add:(className)->
+                classList=a.className.split(' ')
+                if not a.classList.contains(className)
+                    classList.push(className)
+                    a.className=classList.join('')
+            remove:(className)->
+                classList=a.className.split(' ')
+                classIndex=a.classList.contains(className)
+                if classIndex
+                    classList.splice(classIndex,1)
+                    a.className=classList.join('')
+            toggle:(className)->
+                classList=a.className.split(' ')
+                classIndex=classList.indexOf(className)
+                if classIndex
+                    classList.splice(classIndex,1)
+                else
+                    classList.push(className)
+                a.className=classList.join('')
+            }
+    })
+
 self.installDOMWrappers=(oHolder,DOMToplevelScope)->
     scope=(DOMScope)->if DOMScope? then DOMScope else DOMToplevelScope
     # DOM Element Class Mapping
@@ -43,9 +73,14 @@ self.installDOMWrappers=(oHolder,DOMToplevelScope)->
         DOMNode.setAttribute(sAttr,vValue)
         DOMNode[sAttr]=vValue
     oHolder.$rmattr=(DOMNode,sAttr)->DOMNode.removeAttribute(sAttr)
-    oHolder.$data=(DOMNode,sName,vValue)->
-        return DOMNode.dataset[sName] if not vValue?
-        DOMNode.dataset[sName]=vValue
+    oHolder.$d=(DOMNode,sName,vValue=null)->
+        # COMPATIBILITY
+        if not 'dataset' in DOMNode
+            return DOMNode.getAttribute('data-'+sName) if not vValue?
+            DOMNode.setAttribute('data-'+sName,vValue)
+        else
+            return DOMNode.dataset[sName] if not vValue?
+            DOMNode.dataset[sName]=vValue
     oHolder.toggleClass=(DOMNode,className)->DOMNode.classList.toggle(className)
     oHolder.hasClass=(DOMNode,className)->if DOMNode.classList then DOMNode.classList.contains(className) else false
     oHolder.addClass=(DOMNode,className)->DOMNode.classList.add(className)

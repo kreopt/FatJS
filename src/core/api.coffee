@@ -17,7 +17,6 @@ class API
             handler=if result.status==0 then fSuccess else fError
             handler?(result.data)
         errorHandler=(oRequest)->fError?(oRequest.statusText)
-        # TODO: сделать кроссдоменный запрос
         JAFW.Ajax.post(@gatewayURL,sRequestData,successHandler,errorHandler)
     # API-вызов
     # sSignature - сигнатура нужного метода в формате Module.method
