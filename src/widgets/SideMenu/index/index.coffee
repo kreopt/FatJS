@@ -18,9 +18,11 @@ JAFW.Apps.std_SideMenu.HANDLER 'index',
         addEventBySelector "##{oConfig.id} li",'click',->selectItem(@,false)
     showIndicator:({pageName,value})->
         @hideIndicator({pageName})
+        menuItem=@$s('li[data-page="'+pageName+'"]')
         indicator=$c('div')
         indicator.className='Indicator'
         indicator.innerHTML=value
-        @$s('li[data-page="'+pageName+'"]').appendChild(indicator)
+        indicator.style.top=3+menuItem.offsetTop+'px'
+        menuItem.appendChild(indicator)
     hideIndicator:({pageName})->
         removeNode(@$s('li[data-page="'+pageName+'"] div.Indicator'))
