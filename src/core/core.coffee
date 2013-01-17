@@ -1,3 +1,4 @@
+DEBUG=0
 RenderEngine=new jSmart()
 
 assert=(exp,message='')->
@@ -234,6 +235,7 @@ class Ajax
     @sigName - глобальный сигнал - пересылается на локальные объекты и на сервер
     * - любой сигнал
 ###
+#TODO: сигналы с ограниченным числом перехватов
 signalModifiers=['@','=','*']
 parseSignal=(sSignal)->
     [signal,emitter]=sSignal.split(':')
@@ -269,7 +271,7 @@ removeConnection=(sSignal,sSlot,oReceiver)->
         delete __connectionTable[sSignal][objectName]
         if Object.keys(__connectionTable[sSignal]).length==0
             delete __connectionTable[sSignal]
-invoke=(sSignal,oData,emitResult=false)->
+invoke=(sSignal,oData={},emitResult=false)->
     # Глобальная рассылка (не только на клиент, но и на сервер и дочерние окна)
     if sSignal[0]=='@'
         sSignal=sSignal[1..]
@@ -283,6 +285,10 @@ invoke=(sSignal,oData,emitResult=false)->
     invokeSlots=(connectionList)->
         for appName,connectionInfo of connectionList
             for slotName,slot of connectionInfo.slots
+                if DEBUG
+                    console.log('['+new Date().toLocaleTimeString()+'] =INVOKE=  '+connectionInfo.instance.__app__+'.'+connectionInfo.instance.__name__+'.'+slotName+'('+JSON.stringify(oData)+'):'+sigData.emitter)
+                #fi DEBUG
+                oData.__signal__=sigData.name
                 res=slot.call(connectionInfo.instance,oData,sigData.emitter)
                 if sigData.emitter and emitResult and res isnt null
                     EMIT '='+sigData.name,res,sigData.emitter
@@ -323,6 +329,9 @@ self.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
 # oArgs - параметры сигнала
 # oSender - отправитель
 self.EMIT=(sSignal,oArgs,oSender=null,emitResult=false)->
+    if DEBUG
+        console.log('['+new Date().toLocaleTimeString()+'] =EMIT=    '+sSignal+'('+JSON.stringify(oArgs)+'):'+if oSender then oSender.__id__ else '*')
+    #fi DEBUG
     validateSignal(sSignal)
     sSignal=(sSignal+':'+(if oSender.__id__? then oSender.__id__ else oSender.toString())) if oSender
     invoke(sSignal,oArgs,emitResult)
