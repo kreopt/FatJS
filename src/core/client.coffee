@@ -217,7 +217,7 @@ JAFW.run=(selector,appSignature,args,onload)->
         a=_run()
         onload(a) if onload?
 
-JAFWCore::__Register('Ajax',Ajax)
-JAFWCore::__Register('Static',Staticdata)
-JAFWCore::__Register('Apps',AppEnvironment)
-JAFWCore::__Register('Launcher',Launcher)
+JAFW.__Register('Ajax',Ajax)
+JAFW.__Register('Static',Staticdata)
+JAFW.__Register('Apps',AppEnvironment)
+JAFW.__Register('Launcher',Launcher)

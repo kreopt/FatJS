@@ -51,4 +51,4 @@ class API
         requestData=@onBeforeSend(requestData) if @onBeforeSend?
         requestData=JAFW.Url.encode requestData
         @_sendRequest(requestData,fSuccess,fError)
-JAFWCore::__Register('API',API)
+JAFW.__Register('API',API)

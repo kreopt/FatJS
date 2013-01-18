@@ -1,4 +1,7 @@
-self={} if not self
+if exports?
+    self={}
+else if window?
+    self=window
 DEBUG=0
 # COMMON
 class JAFWCore

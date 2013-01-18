@@ -13,4 +13,4 @@ class Upload
         xhr.onload = =>EMIT '=UPLOAD_FILES',{},emitter
         xhr.send(formData)
         return null
-JAFWCore::__Register('Uploader',Upload)
+JAFW.__Register('Uploader',Upload)
