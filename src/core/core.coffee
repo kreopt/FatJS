@@ -1,9 +1,7 @@
+self={} if not self
 DEBUG=0
-
-assert=(exp,message='')->
-    throw message if not exp
 # COMMON
-class self.JAFWCore
+class JAFWCore
     _uid:0
     _mods:{}
     _tpls:{}
@@ -88,7 +86,7 @@ parseSignal=(sSignal)->
     return {name,emitter,modifier}
 validateSignal=(sSignal)->
     if sSignal!='*'
-        assert(sSignal.match('^['+signalModifiers.join('')+']?[a-zA-Z][a-zA-Z_.]*$'),'Bad signal name: '+sSignal)
+        throw 'Bad signal name: '+sSignal if not (sSignal.match('^['+signalModifiers.join('')+']?[a-zA-Z][a-zA-Z_.]*$'))
 # Таблица соединений сигналов и объектов
 __connectionTable={}
 addConnection=(sSignal,sSlot,oReceiver,fSlot)->
@@ -193,6 +191,10 @@ class SigHandler
 JAFWCore::__Register('Url',URL)
 JAFWCore::__Register('Signal',Signal)
 
-JAFWCore::RenderEngine=new jSmart()
+if not exports?
+    JAFWCore::RenderEngine=new jSmart()
 
 self.JAFW=new JAFWCore()
+# nodejs
+if exports?
+    exports.jawf=self.JAFW
