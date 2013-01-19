@@ -9,7 +9,7 @@ PORT=8000
 
 runserver=(router)->
     if (cluster.isMaster)
-        for i in [0..numCPUs]
+        for i in [0...numCPUs]
             cluster.fork()
         cluster.on 'exit', (worker, code, signal)->
             console.log('worker ' + worker.process.pid + ' died')
@@ -37,7 +37,20 @@ runserver=(router)->
                     response.write('INTERNAL SERVER ERROR');
                     response.end()
 
-        http.createServer(requestHandler).listen(PORT)
+        io = require('socket.io')
+        RedisStore = io.RedisStore
+        srv=http.createServer(requestHandler)
+        socket=io.listen(srv)
+        socket.set('store', new RedisStore);
+        socket.set('transports', ['websocket']);
+        srv.listen(PORT)
+        socket.sockets.on 'connection', (client)->
+            console.log('Connection..')
+            client.on 'message',(event)->
+                console.log('Socket '+process.pid+' received data: ',event);
+                router.handleSocket(event,(data)->client.send(data))
+            client.on 'disconnect',->
+                console.log('Socket '+process.pid+' has disconnected');
         sys.puts("Worker "+process.pid+" listerning port "+PORT);
 
 exports.run=runserver
