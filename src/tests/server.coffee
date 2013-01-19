@@ -1,6 +1,10 @@
 JAFW_PATH='../'
 APPS_PATH='./apps/'
 srv=require(JAFW_PATH+"/core/server")
+routes={
+    "/":'',
+    "/client/*":''
+}
 loaded={}
 modLoad=(app)->
     if not loaded[app]
@@ -13,7 +17,6 @@ router={
         data=JSON.parse(data)
         if data.type=='api'
             modLoad(data.app)[data.method](((response)->resultCallback(JSON.stringify(response))),data.data)
-        #setTimeout((->resultCallback(data)),100)
 }
 options={
     port:8001
