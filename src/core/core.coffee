@@ -195,7 +195,13 @@ JAFWCore::__Register('Url',URL)
 JAFWCore::__Register('Signal',Signal)
 
 if not exports?
-    JAFWCore::RenderEngine=new jSmart()
+    #JAFWCore::RenderEngine=new jSmart()
+    JAFWCore::RenderEngine={
+        _tpl:{}
+        loadTemplate:(name,tpl)->
+            @_tpl[name]=jade.compile(tpl)
+        render:(name,args={})->@_tpl[name](args)
+    }
 
 self.JAFW=new JAFWCore()
 # nodejs

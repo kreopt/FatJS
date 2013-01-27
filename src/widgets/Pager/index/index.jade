@@ -1,0 +1,18 @@
+mixin pageButton(page)
+  button.PageIndex(data-idx="#{page}",class="#{page==currentPage?'Selected':''}") page
+button.PrevPage &lt;&lt;
+- for (var i=1; i<left; i++)
+  mixin pageButton(i)
+if currentPage < pageCount-3
+  if currentPage > 5
+    button.PageDel ...
+    - for (var i=currentPage-1; i<middle; i++)
+      mixin pageButton(i)
+  button.PageDel ...
+else
+  if pageCount>8
+    button.PageDel ...
+if pageCount > 6
+  - for (var i=right; i<pageCount;i++)
+      mixin pageButton(i)
+button.NextPage &gt;&gt;
