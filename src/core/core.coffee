@@ -199,8 +199,17 @@ if not exports?
     JAFWCore::RenderEngine={
         _tpl:{}
         loadTemplate:(name,tpl)->
-            @_tpl[name]=jade.compile(tpl)
-        render:(name,args={})->@_tpl[name](args)
+            try
+                @_tpl[name]=jade.compile(tpl)
+            catch e
+                console.error('Failed to compile template: '+name)
+                throw e
+        render:(name,args={})->
+            try
+                @_tpl[name](args)
+            catch e
+                console.error('Failed to render template: '+name)
+                throw e
     }
 
 self.JAFW=new JAFWCore()
