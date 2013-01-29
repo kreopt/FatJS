@@ -1,5 +1,10 @@
-RenderEngine=new jSmart()
-class window.JAFWCore
+if exports?
+    self={}
+else if window?
+    self=window
+DEBUG=0
+# COMMON
+class JAFWCore
     _uid:0
     _mods:{}
     _tpls:{}
@@ -18,104 +23,14 @@ class window.JAFWCore
         Object.defineProperty(JAFWCore::,modName,{
             get:->JAFWCore::_mods[modName]
         })
-
-##
-# Загрузчик статических данных
-##
-class Staticdata
-    _loaded:{}
-    isLoaded:(root)->
-        return if Staticdata::_loaded[root]? then true else false
-    get:(root,callback)->
-        if Staticdata::isLoaded(root.replace(':','_'))
-            callback()
-            return
-        loadScripts=(scriptArray,callback)->
-            scriptLink=scriptArray.shift()
-            script = document.createElement("script");
-            script.type = "text/javascript";
-            script.src=scriptLink
-            script.async=true
-            script.onload=if scriptArray.length then (->loadScripts(scriptArray,callback)) else callback
-            document.head.appendChild(script)
-        storeMeta=(oResponse)->
-            Staticdata::_loaded[root.replace(':','_')]=JSON.parse(oResponse.responseText)
-            result=Staticdata::_loaded[root.replace(':','_')]
-            for html of result.html
-                RenderEngine.loadTemplate(root.replace(':','_')+':'+html,result.html[html])
-            if result.js then loadScripts(result.js,callback) else callback()
-        JAFW.Ajax.get('/jafwload/'+root,null,storeMeta,(->throw('Cannot load application data')))
-
-##
-# Среда запуска приложений
-##
-class AppEnvironment
-    _registered:{}
-    __Register:(appName)->
-        throw('Application already registered') if appName in AppEnvironment::_registered
-        class App
-            __name:appName
-            handlers:{}
-            HANDLER:(name,body)->
-                body.put=(selector,blockName,args)=>@put.call(@,selector,blockName,args)
-                body.__appName=appName
-                body.toString=->@__appName
-                AppEnvironment::_registered[appName].handlers[name]=->
-                    for p of body
-                        @[p]=body[p]
-                    undefined
-
-            put:(selector,blockName,args)->
-                args={} if not args
-
-                if typeof(selector)==typeof({})
-                    container=selector
-                else
-                    container=if selector then $s(selector) else null
-
-                handler=new AppEnvironment::_registered[appName].handlers[blockName](selector)
-
-                # DOM wrappers
-                ((handler,container)->
-                    handler.__HID=JAFW.__nextID()
-                    handler.$s=(selector)->$s(selector,container)
-                    handler.$a=(selector)->$a(selector,container)
-                    handler.$S=(selector)->$S(selector,container)
-                    handler.$A=(selector)->$A(selector,container)
-                    handler.addEventBySelector=(sSelector,sEventName,fCallback)->addEventBySelector(sSelector,container,sEventName,fCallback)
-                )(handler,container)
-
-                if not handler.preRender?
-                    handler.preRender=(r,args)->r(args)
-
-                init=(data)=>
-                    for p of data
-                        args[p] = data[p]
-                    if container
-                        if Staticdata::_loaded[@__name]?.html[blockName]?
-                            args.config=JAFWConf
-                            css=if Staticdata::_loaded[@__name]?.css[blockName]? then Staticdata::_loaded[@__name].css[blockName] else ''
-                            style='<style scoped>'+css+'</style>'
-                            container.innerHTML=style+RenderEngine.render(@__name+':'+blockName,args)
-
-                    handler.init(container,args)
-
-                handler.preRender(init,args)
-        AppEnvironment::_registered[appName]=new App()
-        Object.defineProperty(AppEnvironment::,appName,{
-            get:->AppEnvironment::_registered[appName]
-        })
-
-    load:(appName,callback)->
-        JAFW.Static.get(appName.replace('.','/'),callback)
 ##
 # РАБОТА С URL: кодирование/декодирование объектов в/из строки URL
 ##
 class URL
-    # Разбор объекта и сериализация его в параметры URL
-    # oSubObject - Объект для сериализации
-    # sPrefix - Префикс сериализации. Помещается перед разобранной строкой.
-    # Если префикс не пустой, сериализованный объект заключается в [квадратные скобки]
+# Разбор объекта и сериализация его в параметры URL
+# oSubObject - Объект для сериализации
+# sPrefix - Префикс сериализации. Помещается перед разобранной строкой.
+# Если префикс не пустой, сериализованный объект заключается в [квадратные скобки]
     encode:(oSubObject,sPrefix)->
         # Если объект - строка, сериализация не нужна
         return oSubObject if typeof oSubObject == typeof ''
@@ -129,7 +44,7 @@ class URL
     # Получение объекта из строки URL
     # sUrlStr - строка URL. Если sUrlStr не определена, берется текущая URL строка браузера.
     decode:(sUrlStr)->
-        sUrlStr = window.location.href.slice(window.location.href.indexOf('?') + 1) if sUrlStr==undefined
+        sUrlStr = self.location.href.slice(self.location.href.indexOf('?') + 1) if sUrlStr==undefined
         hashes=sUrlStr.split('&')
         vars={}
         # Разбор ключа, создание дерева объекта
@@ -153,44 +68,28 @@ class URL
             [key,val] = decodeURIComponent(hash).split('=');
             parseKey(key,vars,val)
         vars
-##
-# АСИНХРОННАЯ ПЕРЕДАЧА ДАННЫХ
-##
-class Ajax
-    # Отправка GET-запроса на сервер
-    # sUrl - URL, на который отправится запрос
-    # oData - объект данных
-    # fSuccess/fError - обработчики успешного/ошибочного запроса
-    get:(sUrl,oData,fSuccess,fError)->Ajax::request('GET',sUrl,oData,fSuccess,fError)
-    # Отправка POST-запроса на сервер
-    # sUrl - URL, на который отправится запрос
-    # oData - объект данных
-    # fSuccess/fError - обработчики успешного/ошибочного запроса
-    post:(sUrl,oData,fSuccess,fError)->Ajax::request('POST',sUrl,oData,fSuccess,fError)
-    # Отправка запроса на сервер
-    # sMethod - тип запроса (GET/POST)
-    # sUrl - URL, на который отправится запрос
-    # oData - объект данных
-    # fSuccess/fError - обработчики успешного/ошибочного запроса
-    request:(sMethod,sUrl,oData,fSuccess,fError)->
-        request=new XMLHttpRequest()
-        request.onreadystatechange=->
-            if request.readyState == 4
-                # Если не произошло ошибок на протокольном уровне, выполняем fSuccess, иначе fError
-                handler=if request.status==200 then fSuccess else fError
-                handler?(request)
-        requestData=URL::encode oData
-        # Если метод - GET, кладем данные с строку запроса
-        if sMethod=='GET'
-            sUrl+="?#{requestData}"
-            requestData=null
-        # Выполнение асинхронного запроса
-        request.open(sMethod,sUrl,true);
-        # Заголовок для POST
-        request.setRequestHeader("Content-type", "application/x-www-form-urlencoded") if sMethod=='POST'
-        request.send(requestData)
 
+###
+    СИГНАЛЫ
 
+    Именование:
+        sigName ::= [typeDescriptor] [a-zA-Z._]+
+        typeDescriptor ::= [=]{,1}
+    Типы:
+    sigName - простой сигнал, отправляется на локальные объекты, подписка является постоянной
+    =sigName - временный сигнал. отправляется на локальные объекты, подписка уничтожается после вызова
+    * - любой сигнал
+###
+#TODO: сигналы с ограниченным числом перехватов
+signalModifiers=['=','*']
+parseSignal=(sSignal)->
+    [signal,emitter]=sSignal.split(':')
+    name=signal.replace(new RegExp('['+signalModifiers.join('')+']'),'')
+    modifier=if signal[0] in signalModifiers then signal[0] else ''
+    return {name,emitter,modifier}
+validateSignal=(sSignal)->
+    if sSignal!='*'
+        throw 'Bad signal name: '+sSignal if not (sSignal.match('^['+signalModifiers.join('')+']?[a-zA-Z][a-zA-Z_.]*$'))
 # Таблица соединений сигналов и объектов
 __connectionTable={}
 addConnection=(sSignal,sSlot,oReceiver,fSlot)->
@@ -204,40 +103,59 @@ addConnection=(sSignal,sSlot,oReceiver,fSlot)->
     sSlot
 removeConnection=(sSignal,sSlot,oReceiver)->
     objectName=oReceiver.toString()
+    if sSignal=='*'
+        for sig of __connectionTable
+            delete __connectionTable[sig][objectName] if __connectionTable[sig]?[objectName]?
+        return
+
     if __connectionTable[sSignal]?[objectName]?.slots[sSlot]
         delete __connectionTable[sSignal][objectName].slots[sSlot]
     else
         return
     if Object.keys(__connectionTable[sSignal][objectName].slots).length==0
         delete __connectionTable[sSignal][objectName]
-        if Object.keys(__connectionTable[sSignal]).length
+        if Object.keys(__connectionTable[sSignal]).length==0
             delete __connectionTable[sSignal]
-invoke=(sSignal,oData)->
-    # Глобальная рассылка (не только на клиент, но и на сервер и дочерние окна)
-    if sSignal[0]=='@'
-        sSignal=sSignal[1..]
-        api.call sSignal, oData,(oResponseSignal)->
-            if oResponseSignal
-                EMIT(oResponseSignal.name,oResponseSignal.data)
+invoke=(sSignal,oData={},emitResult=false)->
     # TODO: отправлять на дочерние окна
     #[signal,uid]=sSignal.split(':')
+    sigData=parseSignal(sSignal)
+    temporary=(sigData.modifier=='=')
+    invokeSlots=(connectionList)->
+        for appName,connectionInfo of connectionList
+            for slotName,slot of connectionInfo.slots
+                if DEBUG
+                    console.log('['+new Date().toLocaleTimeString()+'] =INVOKE=  '+connectionInfo.instance.__app__+'.'+connectionInfo.instance.__name__+'.'+slotName+'('+JSON.stringify(oData)+'):'+sigData.emitter)
+                #fi DEBUG
+                oData.__signal__=sigData.name
+                res=slot.call(connectionInfo.instance,oData,sigData.emitter)
+                if sigData.emitter and emitResult and res isnt null
+                    EMIT '='+sigData.name,res,sigData.emitter
+                #Удаляем временные сигналы
+                if temporary
+                    removeConnection('='+sigData.name+(if sigData.emitter then ':'+sigData.emitter else ''),slotName,connectionInfo.instance)
+        return
     # Локальная рассылка
     if __connectionTable[sSignal]
-        for appName,connectionInfo of __connectionTable[sSignal]
-            for slotName,slot of connectionInfo.slots
-                #if (not uid?) or (uid? and uid==connectionInfo.instance.UID)
-                    slot.call(connectionInfo.instance,oData)
+        invokeSlots(__connectionTable[sSignal])
+    else if __connectionTable[sigData.modifier+sigData.name]
+        invokeSlots(__connectionTable[sigData.modifier+sigData.name])
+
 # Удалить подписку на сигнал
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала
 # oReceiver - объект, для которого выполнить отключение
-window.DISCONNECT=(sSignal,sSlot,oReceiver)->
+self.DISCONNECT=(sSignal,sSlot,oReceiver,UID=null)->
+    validateSignal(sSignal)
+    sSignal+=(':'+UID) if UID
     removeConnection(sSignal,sSlot,oReceiver)
 # Подписать объект на сигнал. Возвращает название обработчика, которое можно использовать для отключение
 # sSignal - название сигнала
 # sSlot - название обработчика сигнала, содержащегося в oReceiver. Если sSlot - функция, генерируется уникальный ID
 # oReceiver - объект, для которого выполнить подключение. oReceiver должен иметь свойство toString, возвращающее уникальное имя объекта
-window.CONNECT=(sSignal,sSlot,oReceiver)->
+self.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
+    validateSignal(sSignal)
+    sSignal+=(':'+UID) if UID
     # Если sSlot - функция, генерируем UID и подписываем объект на анонимную функцию
     if (typeof sSlot == typeof(->))
         fSlot=sSlot
@@ -249,54 +167,52 @@ window.CONNECT=(sSignal,sSlot,oReceiver)->
 # sSignal - название сигнала
 # oArgs - параметры сигнала
 # oSender - отправитель
-window.EMIT=(sSignal,oArgs)->invoke(sSignal,oArgs)
+self.EMIT=(sSignal,oArgs,oSender=null,emitResult=false)->
+    if DEBUG
+        console.log('['+new Date().toLocaleTimeString()+'] =EMIT=    '+sSignal+'('+JSON.stringify(oArgs)+'):'+if oSender then oSender.__id__ else '*')
+    #fi DEBUG
+    validateSignal(sSignal)
+    sSignal=(sSignal+':'+(if oSender.__id__? then oSender.__id__ else oSender.toString())) if oSender
+    invoke(sSignal,oArgs,emitResult)
+self.EMIT_AND_WAIT=(oSender,sSignal,oArgs,sSlot)->
+    sSignal.replace('=','')
+    validateSignal(sSignal)
+    CONNECT('='+sSignal,sSlot,oSender,oSender.__id__)
+    EMIT(sSignal,oArgs,oSender,true)
 
-# Вид URL: #/appName:view/urlencode(param1)/...
-# Запуск взаимоисключающих приложений в один контейнер
-class Launcher
-    constructor:()->
-        CONNECT('LAUNCHER_PUSH','push',@)
-        CONNECT('LAUNCHER_REPLACE','repl',@)
-        CONNECT('LAUNCHER_BACK','back',@)
-        @sel='body'
-        # обработчик изменения хеша в адресной строке
-        window.onhashchange= =>
-            #TODO: call destroy for running views
-            [app,args]=window.location.hash.substr(2).split('/')
-            JAFW.run(@sel,app,JAFW.Url.decode(args))
-        window.onpopstate=(e)=>
-            @sel=e.state
-    back:->
-        window.history.back()
-    push:({cont,app,args})->
-        window.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
-        @sel=cont
-        window.onhashchange()
-    repl:({cont,app,args})->
-        window.history.pushState(cont,null,"/#/#{app}/#{JAFW.Url.encode(args)}")
-        @sel=cont
-        window.onhashchange()
+class Signal
+    constructor:(@context,@name,@maxHandlers=-1)->@
+    setMaxHandlers:(@maxHandlers=-1)->@
+    tunnel:(@tunnelName)->@
+    emit:(args)->EMIT(@name,args);return @
+    emitAndWait:(args)->EMIT_AND_WAIT(@context,@name,args,@name+'=');return @
+    _serialize:()->
+class SigHandler
+    constructor:(@context,@sigName,@handler)->
+    _deserialize:()->
 
 JAFWCore::__Register('Url',URL)
-JAFWCore::__Register('Ajax',Ajax)
-JAFWCore::__Register('Static',Staticdata)
-JAFWCore::__Register('Apps',AppEnvironment)
-JAFWCore::__Register('Launcher',Launcher)
-window.JAFW=new JAFWCore()
+JAFWCore::__Register('Signal',Signal)
 
-##
-# Запуск блока приложения
-##
-JAFW.run=(selector,appSignature,args)->
-    [ns,name]=appSignature.split('::')
-    [ns,name]=['',ns] if not name
-    [appName,blockName]=name.split(':')
-    appName=if ns then ns+':'+appName else appName
-    appAccess=appName.replace(':','_')
-    _run=->JAFW.Apps[appAccess].put(selector,blockName,args)
-    if appAccess not of JAFW.Apps._registered
-        JAFW.Apps.__Register(appAccess)
-        JAFW.Apps.load appName,->
-            _run()
-    else
-        _run()
+if not exports?
+    #JAFWCore::RenderEngine=new jSmart()
+    JAFWCore::RenderEngine={
+        _tpl:{}
+        loadTemplate:(name,tpl)->
+            try
+                @_tpl[name]=jade.compile(tpl)
+            catch e
+                console.error('Failed to compile template: '+name)
+                throw e
+        render:(name,args={})->
+            try
+                @_tpl[name](args)
+            catch e
+                console.error('Failed to render template: '+name)
+                throw e
+    }
+
+self.JAFW=new JAFWCore()
+# nodejs
+if exports?
+    exports.jawf=self.JAFW

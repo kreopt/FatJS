@@ -1,6 +1,6 @@
 JAFW.Apps.std_Pager.HANDLER 'index',
     preRender:(renderCallback,{@pageIndex,@navId,@itemCount,@itemsPerPage})->
-        CONNECT 'RESET_PAGER:'+@navId,'reset',@
+        CONNECT 'RESET_PAGER','reset',@,@navId
         @render=renderCallback
         @reset({@pageIndex,@navId,@itemCount,@itemsPerPage})
     reset:({pageIndex,itemCount,itemsPerPage})->
@@ -20,9 +20,9 @@ JAFW.Apps.std_Pager.HANDLER 'index',
     init:(DOMContainer,{pageIndex,navId,pageCount,itemsPerPage})->
         a=@
         @addEventBySelector '.PageIndex','click',->
-            if a.currentPage!=Number(@dataset['idx'])
+            if a.currentPage!=Number($d(@,'idx'))
                 addUniqueClass(@,'Selected',@parentNode)
-                a.pageChange(Number(@dataset['idx']))
+                a.pageChange(Number($d(@,'idx')))
         @addEventBySelector '.PrevPage','click',->
             if a.currentPage>1
                 pageElement=$s('.PageIndex[data-idx="'+(a.currentPage-1)+'"]',@parentNode)
@@ -38,4 +38,4 @@ JAFW.Apps.std_Pager.HANDLER 'index',
         startIndex=(pageIndex-1)* @itemsPerPage
         amount=pageIndex* @itemsPerPage
         @currentPage=pageIndex
-        EMIT 'PAGE_SELECTED:'+ @navId,{startIndex,amount}
+        EMIT 'PAGE_SELECTED',{startIndex,amount},@navId

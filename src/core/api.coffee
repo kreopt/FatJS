@@ -3,10 +3,19 @@
 ##
 class API
     constructor:()->
+        CONNECT 'SERVER_REQUEST','_prepareRequest',@
     setUrl:(@gatewayURL)->
     # Стандартный обработчик ошибок
     stdError:(oResponse)->
         DEBUG(oResponse)
+    _prepareRequest:({sig,args})->
+        success=(msg)->
+            #TODO: отправлять сигнал с учетом senderId
+            EMIT msg.signal,if msg.body then msg.body else {}
+        error=(msg)->
+            EMIT 'ERROR',if msg.body then msg.body else {}
+        #TODO: добавлять в args sessionId и senderId
+        @call(sig,args,success,error)
     # Отправка запроса, подготовленного в call или chain
     _sendRequest:(sRequestData,fSuccess,fError)->
         if not fError?
@@ -17,7 +26,6 @@ class API
             handler=if result.status==0 then fSuccess else fError
             handler?(result.data)
         errorHandler=(oRequest)->fError?(oRequest.statusText)
-        # TODO: сделать кроссдоменный запрос
         JAFW.Ajax.post(@gatewayURL,sRequestData,successHandler,errorHandler)
     # API-вызов
     # sSignature - сигнатура нужного метода в формате Module.method
@@ -43,4 +51,4 @@ class API
         requestData=@onBeforeSend(requestData) if @onBeforeSend?
         requestData=JAFW.Url.encode requestData
         @_sendRequest(requestData,fSuccess,fError)
-JAFWCore::__Register('API',API)
+JAFW.__Register('API',API)

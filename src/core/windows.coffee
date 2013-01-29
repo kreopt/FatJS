@@ -77,7 +77,7 @@ class Window
                           </header><section class="Content"></section></div>
                           """
         a=@
-        $s('.CloseWindow',overlay).onclick= ->a.close(@parentNode.parentNode.dataset['id'])
+        $s('.CloseWindow',overlay).onclick= ->a.close($d(@parentNode.parentNode,'id'))
         JAFW.run($s('.Content',overlay),app,args)
         $s('body').appendChild(overlay)
 

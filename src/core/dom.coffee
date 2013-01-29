@@ -1,108 +1,114 @@
 'use strict';
-class DOMProxy
-    scope:(DOMScope)->if DOMScope? then DOMScope else document
-    _apply:(DOMWrapped,fFunction)->(args...)->
-        args.unshift(this)
-        fFunction.apply(this,args)
-    _wrap:(DOMNodes)->
-        wrapped=if DOMNodes then DOMNodes else document.createElement('empty')
-        wrapped.isEmpty=true if wrapped.tagName=='EMPTY'
-        @_apply(wrapped,hasClass)
-        wrapped
+# COMPATIBILITY
+if not Element.prototype.hasOwnProperty('classList')
+    Object.defineProperty(Element.prototype,'classList',{
+        get:->
+            a=@
+            return {
+            contains:(className)->
+                String(a.className).split(' ').indexOf(className)+1
+            add:(className)->
+                classList=String(a.className).split(' ')
+                if not a.classList.contains(className)
+                    classList.push(className)
+                    a.className=classList.join('')
+            remove:(className)->
+                classList=String(a.className).split(' ')
+                classIndex=a.classList.contains(className)
+                if classIndex
+                    classList.splice(classIndex-1,1)
+                    a.className=classList.join('')
+            toggle:(className)->
+                classList=String(a.className).split(' ')-1
+                classIndex=classList.indexOf(className)
+                if classIndex
+                    classList.splice(classIndex,1)
+                else
+                    classList.push(className)
+                a.className=classList.join('')
+            }
+    })
 
-window.nextSibling=(item)->
-    sibling=item.nextSibling
-    sibling = sibling.nextSibling while (sibling && sibling.nodeType != 1)
-    return sibling
-window.prevSibling=(item)->
-    sibling=item.previousSibling
-    sibling = sibling.previousSibling while (sibling && sibling.nodeType != 1)
-    return sibling
-window.$s=(sSelector,DOMScope)->
-    try
-        return DOMProxy::_wrap(DOMProxy::scope(DOMScope).querySelector(sSelector))
-    catch exception
-        console.log 'Invalid selector: ' + sSelector
-        return null
-window.$a=(sSelector,DOMScope)->
-    r=DOMProxy::scope(DOMScope).querySelectorAll(sSelector)
-    rr=[]
-    rr.push(item) for item in r
-    rr
-window.$c=(sElemName)->document.createElement(sElemName)
-window.$e=(sSelector,sEventName)->
-    fireOnThis = $s(sSelector)
-    evObj = document.createEvent('MouseEvents');
-    evObj.initEvent( 'click', true, true );
-    fireOnThis.dispatchEvent(evObj);
-window.$attr=(DOMNode,sAttr,vValue)->
-    if not vValue?
-        return DOMNode.getAttribute(sAttr)
-    DOMNode.setAttribute(sAttr,vValue)
-    DOMNode[sAttr]=vValue
-window.$rmattr=(DOMNode,sAttr)->
-    DOMNode.removeAttribute(sAttr)
-window.$data=(DOMNode,sName,vValue)->
-    if not vValue?
-        return DOMNode.dataset[sName]
-    DOMNode.dataset[sName]=vValue
-window.$d=document
-window.$w=window
+self.installDOMWrappers=(oHolder,DOMToplevelScope)->
+    scope=(DOMScope)->if DOMScope? then DOMScope else DOMToplevelScope
+    # DOM Element Class Mapping
+    oHolder.$S=(sCPath,DOMScope)->
+        classes=sCPath.split('.')
+        DOMScope=DOMToplevelScope if not DOMScope
+        el=DOMScope
+        classes.forEach (e)=>el=$s('.'+e,el)
+        el
+    oHolder.$A=(sCPath,DOMScope)->
+        classes=sCPath.split('.')
+        DOMScope=DOMToplevelScope if not DOMScope
+        el=DOMScope
+        classes.forEach (e,i)=>el=if (i<classes.length-1) then $s('.'+e,el) else $a('.'+e,el)
+        el
+    oHolder.$s=(sSelector,DOMScope)->
+        el=scope(DOMScope).querySelector(sSelector)
+        if not el
+            el=document.createElement('empty')
+            el.isEmpty=true
+        return el
+    oHolder.$a=(sSelector,DOMScope)->
+        r=scope(DOMScope).querySelectorAll(sSelector)
+        return (item for item in r)
+    oHolder.$c=(sElemName)->document.createElement(sElemName)
+    oHolder.$e=(sSelector,sEventType,sEventName,aEventArgs)->
+        fireOnThis = $s(sSelector)
+        evObj = document.createEvent(sEventType);
+        evObj.initEvent.apply( this, aEventArgs);
+        fireOnThis.dispatchEvent(evObj);
 
-# DOM Element Class Mapping
-window.$S=(sCPath,DOMScope)->
-    classes=sCPath.split('.')
-    DOMScope=$d if not DOMScope
-    el=DOMScope
-    classes.forEach (e)=>el=$s('.'+e,el)
-    el
-window.$A=(sCPath,DOMScope)->
-    classes=sCPath.split('.')
-    DOMScope=$d if not DOMScope
-    el=DOMScope
-    classes.forEach (e,i)=>
-        if (i<classes.length-1)
-            el=$s('.'+e,el)
+    oHolder.$next=(DOMNode)->
+        sibling=DOMNode.nextSibling
+        sibling = sibling.nextSibling while (sibling && sibling.nodeType != 1)
+        return sibling
+    oHolder.$prev=(DOMNode)->
+        sibling=DOMNode.previousSibling
+        sibling = sibling.previousSibling while (sibling && sibling.nodeType != 1)
+        return sibling
+    oHolder.$attr=(DOMNode,sAttr,vValue)->
+        return DOMNode.getAttribute(sAttr) if not vValue?
+        DOMNode.setAttribute(sAttr,vValue)
+        DOMNode[sAttr]=vValue
+    oHolder.$rmattr=(DOMNode,sAttr)->DOMNode.removeAttribute(sAttr)
+    oHolder.$d=(DOMNode,sName,vValue=null)->
+        # COMPATIBILITY
+        if not ('dataset' in DOMNode)
+            return DOMNode.getAttribute('data-'+sName) if not vValue?
+            DOMNode.setAttribute('data-'+sName,vValue)
         else
-            el=$a('.'+e,el)
-    el
+            return DOMNode.dataset[sName] if not vValue?
+            DOMNode.dataset[sName]=vValue
+    oHolder.toggleClass=(DOMNode,className)->DOMNode.classList.toggle(className)
+    oHolder.hasClass=(DOMNode,className)->if DOMNode.classList then DOMNode.classList.contains(className) else false
+    oHolder.addClass=(DOMNode,className)->DOMNode.classList.add(className)
+    oHolder.addUniqueClass=(DOMNode,sClassName,DOMScope)->
+        DOMScope=document if not DOMScope?
+        oldNodes=DOMScope.querySelectorAll('.'+sClassName)
+        removeClass(node,sClassName) for node in oldNodes
+        addClass(DOMNode,sClassName)
+    oHolder.removeClass=(DOMNode,className)->DOMNode.classList.remove(className)
+    oHolder.removeNode=(DOMNode)->DOMNode.parentNode.removeChild(DOMNode) if DOMNode.parentNode
+    oHolder.insertAfter=(DOMNode,sHtml)->DOMNode.insertAdjacentHTML('afterend',sHtml)
+    oHolder.insertBefore=(DOMNode,sHtml)->DOMNode.insertAdjacentHTML('beforebegin',sHtml)
 
-window.toggleClass=(DOMNode,className)->DOMNode.classList.toggle(className)
-window.hasClass=(DOMNode,className)->if DOMNode.classList then DOMNode.classList.contains(className) else false
-window.addClass=(DOMNode,className)->DOMNode.classList.add(className)
-window.addUniqueClass=(DOMNode,sClassName,DOMScope)->
-    DOMScope=document if not DOMScope?
-    oldNodes=DOMScope.querySelectorAll('.'+sClassName)
-    removeClass(node,sClassName) for node in oldNodes
-    addClass(DOMNode,sClassName)
-window.removeClass=(DOMNode,className)->DOMNode.classList.remove(className)
-window.dragSetup=(event,oData,sEffect)->
-    event.dataTransfer.setData('text/plain',JSON.stringify(oData))
-    event.dataTransfer.effectAllowed=sEffect
-    event.dataTransfer.dropEffect = sEffect
-window.addEvents=(DOMNodes,sEventName,fCallback)->
-    for node in DOMNodes
-        node['on'+sEventName]=fCallback
-window.addEventBySelector=(sSelector,DOMScope,sEventName,fCallback)->
-    if arguments.length<4
-        fCallback=sEventName
-        sEventName=DOMScope
-        DOMScope=undefined
-    DOMNodes=$a(sSelector,DOMScope)
-    addEvents(DOMNodes,sEventName,fCallback)
-window.getNodeByvent=(eEvent) ->
-    eEvent = eEvent || window.event
-    n = eEvent.target || eEvent.srcElement
-    if n.correspondingUseElement # Нужно для svg
-        n = n.correspondingUseElement
-    return n
-window.removeNodesBySelector=(sSelector,DOMScope)->
-    DOMNodes=DOMProxy::scope(DOMScope).querySelectorAll(sSelector)
-    for node in DOMNodes
-        node.parentNode.removeChild(node)
-window.removeNode=(DOMNode)->
-    DOMNode.parentNode.removeChild(DOMNode) if DOMNode.parentNode
-window.after=(DOMNodeSibling,sHtml)->
-    DOMNodeSibling.insertAdjacentHTML('afterend',sHtml)
-window.before=(DOMNodeSibling,sHtml)->
-    DOMNodeSibling.insertAdjacentHTML('beforebegin',sHtml)
+    oHolder.dragSetup=(event,oData,sEffect)->
+        event.dataTransfer.setData('text/plain',JSON.stringify(oData))
+        event.dataTransfer.effectAllowed=sEffect
+        event.dataTransfer.dropEffect = sEffect
+    oHolder.addEvents=(DOMNodes,sEventName,fCallback)->
+        node.addEventListener(sEventName,fCallback,false) for node in DOMNodes
+    oHolder.addEventBySelector=(sSelector,DOMScope,sEventName,fCallback)->
+        if arguments.length<4
+            fCallback=sEventName
+            sEventName=DOMScope
+            DOMScope=undefined
+        DOMNodes=$a(sSelector,DOMScope)
+        addEvents(DOMNodes,sEventName,fCallback)
+    oHolder.removeNodesBySelector=(sSelector,DOMScope)->
+        DOMNodes=DOMProxy::scope(DOMScope).querySelectorAll(sSelector)
+        for node in DOMNodes
+            node.parentNode.removeChild(node)
+installDOMWrappers(self,document)

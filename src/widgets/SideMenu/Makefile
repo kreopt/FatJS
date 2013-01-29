@@ -1,10 +1,13 @@
-include ./application.mk
 
 LIB_PATH=../../../../../lib/jafw/widgets/
+include ../local.mk
+include application.mk
 all: $(JS) $(CSS) $(HTML)
-%.js: %.coffee
-	$(COFFEE) -o $(LIB_PATH)$(APP_NAME) -c $<
-%.css: %.less
-	$(LESS) -x $< > $(LIB_PATH)$(APP_NAME)/`echo "$@" | cut -d'/' -f2`
-%.tpl: %.html
-	$(CP) $< $(LIB_PATH)$(APP_NAME)/`echo "$@" | cut -d'/' -f2`
+clean:
+	rm -f $(JS) $(CSS) $(HTML)
+$(LIB_PATH)$(APP_NAME)/%.js: %.coffee
+	$(COFFEE) -o `dirname $@` -c $<
+$(LIB_PATH)$(APP_NAME)/%.css: %.less
+	$(LESS) -x $< > $@
+$(LIB_PATH)$(APP_NAME)/%.jade: %.jade
+	$(CP) $< $@
