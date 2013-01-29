@@ -1,4 +1,0 @@
-APP_NAME=ComboBox
-JS=
-CSS=
-HTML=

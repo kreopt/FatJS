@@ -261,6 +261,7 @@ class Launcher
         @sel='body'
         # обработчик изменения хеша в адресной строке
         window.onhashchange= =>
+            #TODO: call destroy for running views
             [app,args]=window.location.hash.substr(2).split('/')
             JAFW.run(@sel,app,JAFW.Url.decode(args))
         window.onpopstate=(e)=>

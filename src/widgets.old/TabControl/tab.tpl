@@ -1,1 +1,0 @@
-<div class="Tab" {foreach $attr as $key=>$val} data-{$key}="{$val}"{/foreach}>{$head}</div>
