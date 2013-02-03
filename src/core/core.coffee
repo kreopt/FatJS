@@ -5,7 +5,8 @@ else if window?
 self.logDebug=()->
    d=new Date()
    ms=d.getMilliseconds()
-   console.debug.apply(console,['['+d.toLocaleTimeString()+'.'+ms+']'].concat(arguments))
+   args=['['+d.toLocaleTimeString()+'.'+ms+']'].concat(arguments)
+   console.debug.apply(console,args)
 DEBUG=0
 # COMMON
 class JAFWCore
