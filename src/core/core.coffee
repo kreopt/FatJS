@@ -2,6 +2,10 @@ if exports?
     self={}
 else if window?
     self=window
+self.logDebug=()->
+   d=new Date()
+   ms=d.getMilliseconds()
+   console.debug.apply(console,['['+d.toLocaleTimeString()+'.'+ms+']'].concat(arguments))
 DEBUG=0
 # COMMON
 class JAFWCore
@@ -79,6 +83,8 @@ class URL
     sigName - простой сигнал, отправляется на локальные объекты, подписка является постоянной
     =sigName - временный сигнал. отправляется на локальные объекты, подписка уничтожается после вызова
     * - любой сигнал
+###
+
 ###
 #TODO: сигналы с ограниченным числом перехватов
 signalModifiers=['=','*']
@@ -190,9 +196,9 @@ class Signal
 class SigHandler
     constructor:(@context,@sigName,@handler)->
     _deserialize:()->
-
+###
 JAFWCore::__Register('Url',URL)
-JAFWCore::__Register('Signal',Signal)
+#JAFWCore::__Register('Signal',Signal)
 
 if not exports?
     #JAFWCore::RenderEngine=new jSmart()
@@ -215,4 +221,4 @@ if not exports?
 self.JAFW=new JAFWCore()
 # nodejs
 if exports?
-    exports.jawf=self.JAFW
+    exports.jafw=self.JAFW

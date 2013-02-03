@@ -6,8 +6,6 @@ url=require('url')
 numCPUs = require('os').cpus().length;
 core=require('./core')
 
-PORT=8000
-
 runserver=(router,options)->
     PORT=options.port if options.port?
     if (cluster.isMaster)
@@ -16,8 +14,8 @@ runserver=(router,options)->
         cluster.on 'exit', (worker, code, signal)->
             console.warn('worker ' + worker.process.pid + ' died')
     else
-        makeResponse=(response,result)->
-            response.writeHead(200, {"Content-Type": "text/plain"});
+        makeResponse=(response,result,status,head)->
+            response.writeHead(status, head);
             response.write(result);
             response.end()
         requestHandler=(request,response)->
@@ -29,13 +27,13 @@ runserver=(router,options)->
             request.addListener "data", (postDataChunk)->
                 postData += postDataChunk;
                 console.info("Received POST data chunk '"+postDataChunk + "'.");
-            responseCallback=(result)->makeResponse(response,result)
+            responseCallback=(result,status=200,head={"Content-Type": "text/plain"})->makeResponse(response,result,status,head)
             request.addListener "end", ->
                 try
-                    router.handle(request,responseCallback,core.jawf.Url.decode(postData))
+                    router.handle(request,responseCallback,postData)
                 catch exception
                     console.error(exception.stack)
-                    response.writeHead(500, {"Content-Type": "text/plain"});
+                    response.writeHead(500, {"Content-Type": "text/html"});
                     response.write('INTERNAL SERVER ERROR');
                     response.end()
 
@@ -54,7 +52,7 @@ runserver=(router,options)->
                     router.handleSocket(event,(data)->client.send(data))
                 catch exception
                     console.error(exception.stack)
-                    client.send({error:exception.stack})
+                    client.send({type:'error',data:exception.stack})
             client.on 'disconnect',->
                 console.warn('Socket '+process.pid+' has disconnected');
         sys.puts("Worker "+process.pid+" listerning port "+PORT);

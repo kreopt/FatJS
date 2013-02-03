@@ -157,6 +157,7 @@ class Ajax
 # Вид URL: #/appName:view/urlencode(param1)/...
 # Запуск взаимоисключающих приложений в один контейнер
 class Launcher
+    toString:->'appLauncher'
     constructor:()->
         CONNECT('LAUNCHER_PUSH','push',@)
         CONNECT('LAUNCHER_REPLACE','repl',@)
