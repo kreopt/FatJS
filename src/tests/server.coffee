@@ -77,7 +77,9 @@ router = {
             catch e
                apiFallback(resultCallback,JAFW.Url.encode(data),data.seq)
          when 'businit'
-            resultCallback(JSON.stringify({type:'businit',handles:['testsig1','testsig2']}))
+            handles=['testsig1','testsig2']
+            #TODO: get handles from apps metadata(store in redis?)
+            resultCallback(JSON.stringify({type:'businit',handles:handles}))
          else
             resultCallback(JSON.stringify({type:'error',data:'unknown request type: '+data.type}))
 }
