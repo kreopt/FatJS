@@ -2,7 +2,7 @@ window.JAFW={
     ## КОНФИГУРАЦИЯ
 
     ScriptPath:'js',    # Путь к скриптам проекта
-    AppPath:'js/apps',  # Путь к скриптам приложений
+    AppPath:'js/srvapps',  # Путь к скриптам приложений
     AppCssPath:'css',   # Путь к стилям приложений
     IncludeLibs:[],     # Подключаемые сторонние библиотеки
     JafwModules:[

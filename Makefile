@@ -1,3 +1,3 @@
 all:
-	$(COFFEE) -o ../../lib/jafw/ -c ./src/
+	$(COFFEE) -o ../../lib/jafw/core/ -c ./src/core/
 	$(MAKE) -C src/widgets all

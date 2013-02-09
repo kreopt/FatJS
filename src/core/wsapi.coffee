@@ -54,7 +54,7 @@ class self.WebSocketBus extends IBus
             #TODO: parseSender
             EMIT msg.signal,(if msg.data then msg.data else {}),msg.sender
          else if msg.type=='api'
-            EMIT '=WSAPI_REQUEST',msg.data.data,msg.seq
+            EMIT '=WSAPI_REQUEST',msg.data,msg.seq
          else if msg.type == 'error'
             EMIT 'ERROR', {body: msg.data}
          else if msg.type=='businit'

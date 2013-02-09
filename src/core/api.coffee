@@ -38,6 +38,8 @@ class API
       if JAFWConf.useWSAPI==1
          requestData.type='api'
          requestData.seq=JAFW.__nextID()
+         if typeof(fSuccess)!=typeof(->)
+            fSuccess=->
          EMIT_AND_WAIT({
             toString:->'wsapi'
             __id__:requestData.seq
