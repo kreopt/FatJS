@@ -11,6 +11,10 @@ JAFW.Apps.std_Pager.HANDLER 'index',
         @pageIndex=pageCount if @pageIndex>pageCount
         @currentPage=@pageIndex
         @render {
+            @pageIndex,
+            @navId,
+            @itemCount,
+            @itemsPerPage
             pageCount:pageCount,
             currentPage:@pageIndex,
             left: if @pageIndex<6 then Math.min(6,pageCount) else 2,
@@ -22,17 +26,20 @@ JAFW.Apps.std_Pager.HANDLER 'index',
         @addEventBySelector '.PageIndex','click',->
             if a.currentPage!=Number($d(@,'idx'))
                 addUniqueClass(@,'Selected',@parentNode)
-                a.pageChange(Number($d(@,'idx')))
+                #a.pageChange(Number($d(@,'idx')))
+                a.reset({pageIndex: Number($d(@,'idx')), itemCount:a.itemCount, itemsPerPage:a.itemsPerPage})
         @addEventBySelector '.PrevPage','click',->
             if a.currentPage>1
                 pageElement=$s('.PageIndex[data-idx="'+(a.currentPage-1)+'"]',@parentNode)
                 addUniqueClass(pageElement,'Selected',@parentNode)
-                a.pageChange(a.currentPage-1)
+                #a.pageChange(a.currentPage-1)
+                a.reset({pageIndex: a.currentPage-1, itemCount:a.itemCount, itemsPerPage:a.itemsPerPage})
         @addEventBySelector '.NextPage','click',->
-            if a.currentPage<Math.ceil(a.itemCount / a.itemsPerPage)
+            if a.currentPage<Math.floor(a.itemCount / a.itemsPerPage)
                 pageElement=$s('.PageIndex[data-idx="'+(a.currentPage+1)+'"]',@parentNode)
                 addUniqueClass(pageElement,'Selected',@parentNode)
-                a.pageChange(a.currentPage+1)
+                #a.pageChange(a.currentPage+1)
+                a.reset({pageIndex: a.currentPage+1, itemCount:a.itemCount, itemsPerPage:a.itemsPerPage})
         @pageChange(pageIndex)
     pageChange:(pageIndex)->
         startIndex=(pageIndex-1)* @itemsPerPage
