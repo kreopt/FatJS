@@ -17,9 +17,9 @@ JAFW.Apps.std_Pager.HANDLER 'index',
             @itemsPerPage
             pageCount:pageCount,
             currentPage:@pageIndex,
-            left: if @pageIndex<6 then Math.min(6,pageCount) else 2,
+            left: if @pageIndex<5 then Math.min(6,pageCount) else 2,
             middle:Math.min(@pageIndex+1,pageCount),
-            right:if @pageIndex>Math.max(0,pageCount-4) then Math.max(1,pageCount-5) else Math.max(1,pageCount-1),
+            right:if @pageIndex>Math.max(0,pageCount-3) then Math.max(1,pageCount-5) else Math.max(1,pageCount-1),
         }
     init:(DOMContainer,{pageIndex,navId,pageCount,itemsPerPage})->
         a=@

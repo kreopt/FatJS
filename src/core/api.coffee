@@ -33,7 +33,7 @@ class API
    # oArgs - параметры метода. Имена параметров должны начинаться с обозначения типа: [n=i=integer,f=float,s=string,o=complex object]
    call: (sSignature, oArgs, fSuccess, fError)->
       [module..., method]=sSignature.split('.')
-      requestData={mod: module.join('.'), method: method, data: oArgs}
+      requestData={mod: module.join('.'), method: method, data: oArgs, meta:{}}
       requestData = @onBeforeSend(requestData) if @onBeforeSend?
       if JAFWConf.useWSAPI==1
          requestData.type='api'
