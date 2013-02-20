@@ -108,7 +108,8 @@ self.installDOMWrappers=(oHolder,DOMToplevelScope)->
         DOMNodes=$a(sSelector,DOMScope)
         addEvents(DOMNodes,sEventName,fCallback)
     oHolder.removeNodesBySelector=(sSelector,DOMScope)->
-        DOMNodes=DOMProxy::scope(DOMScope).querySelectorAll(sSelector)
+        DOMScope=document if not DOMScope?
+        DOMNodes=DOMScope.querySelectorAll(sSelector)
         for node in DOMNodes
             node.parentNode.removeChild(node)
 installDOMWrappers(self,document)

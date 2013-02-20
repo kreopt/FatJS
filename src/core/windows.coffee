@@ -78,8 +78,10 @@ class Window
                           """
         a=@
         $s('.CloseWindow',overlay).onclick= ->a.close($d(@parentNode.parentNode,'id'))
+        args.__winId__=id
         JAFW.run($s('.Content',overlay),app,args)
         $s('body').appendChild(overlay)
+        return id
 
     close:(sWindowId)->
         removeNodesBySelector """.Overlay[data-id="#{sWindowId}"]"""
