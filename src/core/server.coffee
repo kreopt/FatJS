@@ -38,16 +38,18 @@ runserver=(router,options)->
                 postData += postDataChunk;
                 console.info("Received POST data chunk '"+postDataChunk + "'.");
             responseCallback=(result,status=200,head={"Content-Type": "text/plain"})->
-               asyncCatch(->makeResponse(response,result,status,head)).catch((e)->makeResponse(response,JSON.stringify({type:'error',data:e.stack}),status,head))
+               makeResponse(response,result,status,head)
             request.addListener "end", ->
                 try
-                    router.handle(request,responseCallback,postData)
+                    handleRequest=->router.handle(request,responseCallback,postData)
+                    asyncCatch(handleRequest).catch((e)->
+                       makeResponse(response,JSON.stringify({type:'error',data:e.stack}))
+                    )
                 catch exception
                     console.error(exception.stack)
                     response.writeHead(500, {"Content-Type": "text/html"});
                     response.write('INTERNAL SERVER ERROR');
                     response.end()
-
         io = require('socket.io')
         RedisStore = io.RedisStore
         srv=http.createServer(requestHandler)

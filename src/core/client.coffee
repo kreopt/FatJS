@@ -162,12 +162,13 @@ class Launcher
         CONNECT('LAUNCHER_PUSH','push',@)
         CONNECT('LAUNCHER_REPLACE','repl',@)
         CONNECT('LAUNCHER_BACK','back',@)
-        @sel='body'
+        @sel='#jafw_container'
         @containerApps={}
         @currentView=null
         @storedStates={}
         # обработчик изменения хеша в адресной строке
         self.onhashchange= (e)=>
+            @sel='#jafw_container' if not @sel
             [app,args]=e.newURL.split('#')[1].substr(1).split('/')
             [appName,view]=app.split(':')
             @containerApps[@sel].__destroy__() if @containerApps[@sel]? and appName!= @containerApps[@sel].__app__
