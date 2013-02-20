@@ -172,8 +172,12 @@ class Launcher
         # обработчик изменения хеша в адресной строке
         self.onhashchange= (e)=>
             @sel=@defaultSelector if not @sel
-            [app,args]=e.newURL.split('#')[1].substr(1).split('/')
-            app=@defaultApp if not app
+            hash=e.newURL.split('#')
+            if hash[1]
+               [app,args]=hash[1].substr(1).split('/')
+            else
+               app=@defaultApp
+               args=""
             [appName,view]=app.split(':')
             @containerApps[@sel].__destroy__() if @containerApps[@sel]? and appName!= @containerApps[@sel].__app__
             storeCA= (a)=>
@@ -200,7 +204,9 @@ class Launcher
           @currentView=a
           @containerApps[selector]=a
           # загружаем приложение, указанное в адресной строке
-          [app,args]=window.location.hash.split('#')[1].substr(1).split('/')
+          hash=window.location.hash.split('#')
+          return if not hash[1]
+          [app,args]=hash[1].substr(1).split('/')
           return if not app
           @push({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
        # сохраняем последнее состояние представления, если есть функция сохранения
