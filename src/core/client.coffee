@@ -162,14 +162,18 @@ class Launcher
         CONNECT('LAUNCHER_PUSH','push',@)
         CONNECT('LAUNCHER_REPLACE','repl',@)
         CONNECT('LAUNCHER_BACK','back',@)
+        CONNECT('LAUNCHER_START','start',@)
         @sel='#jafw_container'
+        @defaultSelector='#jafw_container'
+        @defaultApp='Main:index'
         @containerApps={}
         @currentView=null
         @storedStates={}
         # обработчик изменения хеша в адресной строке
         self.onhashchange= (e)=>
-            @sel='#jafw_container' if not @sel
+            @sel=@defaultSelector if not @sel
             [app,args]=e.newURL.split('#')[1].substr(1).split('/')
+            app=@defaultApp if not app
             [appName,view]=app.split(':')
             @containerApps[@sel].__destroy__() if @containerApps[@sel]? and appName!= @containerApps[@sel].__app__
             storeCA= (a)=>
@@ -186,6 +190,21 @@ class Launcher
             JAFW.run(@sel,app,JAFW.Url.decode(args),storeCA)
         self.onpopstate=(e)=>
             @sel=e.state
+    start:({app,selector,args})->
+       args={} if not args
+       @defaultApp=app
+       @defaultContainer=selector
+       [appName,view]=app.split(':')
+       @containerApps[selector].__destroy__() if @containerApps[selector]? and appName!= @containerApps[selector].__app__
+       storeCA= (a)=>
+          @currentView=a
+          @containerApps[selector]=a
+          # загружаем приложение, указанное в адресной строке
+          [app,args]=window.location.hash.split('#')[1].substr(1).split('/')
+          return if not app
+          @push({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
+       # сохраняем последнее состояние представления, если есть функция сохранения
+       JAFW.run(@sel,app,args,storeCA)
     back:->
         self.history.back()
     push:({cont,app,args})->

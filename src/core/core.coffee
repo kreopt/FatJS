@@ -49,6 +49,7 @@ class URL
     # Получение объекта из строки URL
     # sUrlStr - строка URL. Если sUrlStr не определена, берется текущая URL строка браузера.
     decode:(sUrlStr)->
+        return {} if not sUrlStr
         sUrlStr = self.location.href.slice(self.location.href.indexOf('?') + 1) if sUrlStr==undefined
         hashes=sUrlStr.split('&')
         vars={}
