@@ -40,7 +40,7 @@ class AppEnvironment
             runningHandlers:{}
             toString:->@__name__
             constructor:->
-                CONNECT 'jafw.Apps.'+@__name__+'.destroy','__destroy__',@
+                CONNECT 'inSide.Apps.'+@__name__+'.destroy','__destroy__',@
             __destroy__:->
                 for hid,handler of @runningHandlers
                     handler.__destroy__()
@@ -81,6 +81,7 @@ class AppEnvironment
                     container=if selector then $s(selector) else null
 
                 hid=JAFW.__nextID()
+                console.log("""#{appName}:#{blockName}""")
                 @runningHandlers[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
                 handler=@runningHandlers[hid]
                 handler.__name__=blockName
@@ -207,10 +208,10 @@ class Launcher
           hash=window.location.hash.split('#')
           return if not hash[1]
           [app,args]=hash[1].substr(1).split('/')
-          return if not app
+          return if not app or app==@defaultApp
           @push({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
        # сохраняем последнее состояние представления, если есть функция сохранения
-       JAFW.run(@sel,app,args,storeCA)
+       JAFW.run(@defaultContainer,app,args,storeCA)
     back:->
         self.history.back()
     push:({cont,app,args})->

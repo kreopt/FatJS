@@ -1,7 +1,7 @@
 window.JAFWConf={
     img_dir:'/img/',
     app_dir:'/lib/apps/',
-    jafw_dir:'/lib/jafw/',
+    jafw_dir:'/lib/inSide/',
     lib_dir:'/lib/lib/',
     useWSAPI:1
 }
