@@ -73,7 +73,7 @@ class Window
         window.addEventListener('resize',resize,false)
         overlay.innerHTML="""<div class="WINDOW #{cls}" id="WIN_#{id}" data-id="#{id}" draggable="true">
                           <header class="WindowHead"><span style="padding-left: 20px;font-weight: bold">#{title}</span>
-                          <img class="CloseWindow" style="float: right;cursor:pointer" class="point" height="16" src="#{JAFWConf.img_dir}Icons/cross.svg"/>
+                          <img class="CloseWindow" style="float: right;cursor:pointer" class="point" height="16" src="#{JAFWConf.img_dir}/Icons/cross.svg"/>
                           </header><section class="Content"></section></div>
                           """
         a=@
