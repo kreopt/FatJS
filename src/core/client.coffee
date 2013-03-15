@@ -23,6 +23,8 @@ class AppEnvironment
                     handler.__destroy__()
             HANDLER:(name,body)->
                 a=@
+                body.run=(selector,appSignature,args,onload)->
+                   JAFW.run(selector,appSignature,args,onload,@__id__)
                 body.put=(selector,blockName,args,onload)->
                   a.put.call(a,selector,blockName,args, @__id__,onload)
                 body.__app__=appName
@@ -61,6 +63,8 @@ class AppEnvironment
                    [eappName,eblockName]=nm.split(':')
                    eappName=if ns then ns+':'+eappName else eappName
                    eappAccess=eappName.replace(':','_')
+                   if eappAccess not of JAFW.Apps._registered
+                      JAFW.Apps.__Register(eappAccess)
                    AppEnvironment::startView eappAccess,eblockName,{},null,=>
                       extendable=AppEnvironment::_registered[appName].handlersProp[name]
                       extendable.__super__=AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
@@ -271,7 +275,7 @@ class Launcher
 # Запуск блока приложения
 ##
 containerApps=null
-JAFW.run=(selector,appSignature,args,onload)->
+JAFW.run=(selector,appSignature,args,onload,parentId=null)->
     [ns,name]=appSignature.split('::')
     [ns,name]=['',ns] if not name
     [appName,blockName]=name.split(':')
@@ -279,7 +283,7 @@ JAFW.run=(selector,appSignature,args,onload)->
     appAccess=appName.replace(':','_')
     if appAccess not of JAFW.Apps._registered
         JAFW.Apps.__Register(appAccess)
-    JAFW.Apps[appAccess].put(selector,blockName,args,null,onload)
+    JAFW.Apps[appAccess].put(selector,blockName,args,parentId,onload)
 
 JAFW.__Register('Ajax',Ajax)
 JAFW.__Register('Apps',AppEnvironment)
