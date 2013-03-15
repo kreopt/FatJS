@@ -64,7 +64,7 @@ runserver=(router,options)->
                 try
                    handleRequest=->router.handleSocket(event,(data)->
                       client.send(data)
-                      throw 'NOERROR'
+                      #throw 'NOERROR'
                    )
                    asyncCatch(handleRequest).catch((e)->
                       return if e=='NOERROR'

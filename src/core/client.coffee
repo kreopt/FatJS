@@ -1,42 +1,19 @@
 # CLIENT SIDE
-
-##
-# Загрузчик статических данных
-##
-class Staticdata
-    _loaded:{}
-    isLoaded:(root)->
-        return if Staticdata::_loaded[root]? then true else false
-    get:(root,callback)->
-        if Staticdata::isLoaded(root.replace(':','_'))
-            callback()
-            return
-        loadScripts=(scriptArray,callback)->
-            scriptLink=scriptArray.shift()
-            script = document.createElement("script");
-            script.type = "text/javascript";
-            script.src=scriptLink
-            script.async=true
-            script.onload=if scriptArray.length then (->loadScripts(scriptArray,callback)) else callback
-            document.head.appendChild(script)
-        storeMeta=(oResponse)->
-            Staticdata::_loaded[root.replace(':','_')]=JSON.parse(oResponse.responseText)
-            result=Staticdata::_loaded[root.replace(':','_')]
-            for html of result.html
-                JAFW.RenderEngine.loadTemplate(root.replace(':','_')+':'+html,result.html[html])
-            if result.js then loadScripts(result.js,callback) else callback()
-        JAFW.Ajax.get('/jafwload/'+root,null,storeMeta,(->throw('Cannot load application data')))
-
 ##
 # Среда запуска приложений
 ##
 class AppEnvironment
+    _styles:{}
     _registered:{}
+    _inits:{}
+    _putQueue:[]
+    _busy:false
     __Register:(appName)->
         throw('Application already registered') if appName in AppEnvironment::_registered
         class App
             __name__:appName
             handlers:{}
+            handlersProp:{}
             runningHandlers:{}
             toString:->@__name__
             constructor:->
@@ -46,7 +23,8 @@ class AppEnvironment
                     handler.__destroy__()
             HANDLER:(name,body)->
                 a=@
-                body.put=(selector,blockName,args)->a.put.call(a,selector,blockName,args, @__id__)
+                body.put=(selector,blockName,args,onload)->
+                  a.put.call(a,selector,blockName,args, @__id__,onload)
                 body.__app__=appName
                 if not body.preRender?
                     body.preRender=(r,args)->r(args)
@@ -68,56 +46,120 @@ class AppEnvironment
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
                     delete a.runningHandlers[@__id__]
+                AppEnvironment::_registered[appName].handlersProp[name]=body
                 AppEnvironment::_registered[appName].handlers[name]=->
+                    body=AppEnvironment::_registered[appName].handlersProp[name]
                     for p of body
                         @[p]=body[p]
+                    for p,v of body.__super__
+                       if typeof(body.__super__[p])==typeof(->)
+                          body.__super__[p]=v.bind(@)
                     undefined
-            put:(selector,blockName,args,parentHid=null)->
-                args={} if not args
-
-                if typeof(selector)==typeof({})
-                    container=selector
+                if body.__extends__?
+                   [ns,nm]=body.__extends__.split('::')
+                   [ns,nm]=['',ns] if not nm
+                   [eappName,eblockName]=nm.split(':')
+                   eappName=if ns then ns+':'+eappName else eappName
+                   eappAccess=eappName.replace(':','_')
+                   AppEnvironment::startView eappAccess,eblockName,{},null,=>
+                      extendable=AppEnvironment::_registered[appName].handlersProp[name]
+                      extendable.__super__=AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
+                      for prop,val of AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
+                         extendable[prop]=val if not extendable[prop]?
+                      AppEnvironment::_inits[appName+':'+name](AppEnvironment::_registered[appName].handlers[name])
                 else
-                    container=if selector then $s(selector) else null
+                   AppEnvironment::_inits[appName+':'+name](AppEnvironment::_registered[appName].handlers[name])
+            put:(selector,blockName,args,parentHid=null,onload=null)->
+               if AppEnvironment::_busy==true
+                  AppEnvironment::_putQueue.push([appName,selector,blockName,args,parentHid,onload])
+                  return
+               AppEnvironment::_busy=true
+               AppEnvironment::startView @__name__,blockName,args,selector,=>
+                   args={} if not args
 
-                hid=JAFW.__nextID()
-                console.log("""#{appName}:#{blockName}""")
-                @runningHandlers[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
-                handler=@runningHandlers[hid]
-                handler.__name__=blockName
-                handler.__id__=hid
-                handler.__parent__=parentHid
-                handler.__children__=[]
-                handler.__container__=container
-                handler.toString=->@__app__+":"+@__name__
-                if parentHid of @runningHandlers
-                    @runningHandlers[parentHid].__children__.push(handler)
-                # Обертки событий DOM для обработчика
-                installDOMWrappers(handler,container)
-                init=(data)=>
-                    for p of data
-                        args[p] = data[p]
-                    if container
-                        if Staticdata::_loaded[@__name__]?.html[blockName]?
-                            args.config=JAFWConf
-                            css=if Staticdata::_loaded[@__name__]?.css[blockName]? then Staticdata::_loaded[@__name__].css[blockName] else ''
-                            style='<style scoped>'+css+'</style>'
-                            container.innerHTML=style+JAFW.RenderEngine.render(@__name__+':'+blockName,args)
+                   if typeof(selector)==typeof({})
+                       container=selector
+                   else
+                       container=if selector then $s(selector) else null
 
-                    handler.init(container,args)
-                #AppEnvironment::_registered[appName].running.push(handler)
-                handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
-                handler.preRender(init,args)
-                return handler
-
+                   hid=JAFW.__nextID()
+                   console.log("""#{@__name__}:#{blockName}""")
+                   @runningHandlers[hid]=new AppEnvironment::_registered[@__name__].handlers[blockName](selector)
+                   handler=@runningHandlers[hid]
+                   handler.__name__=blockName
+                   handler.__id__=hid
+                   handler.__parent__=parentHid
+                   handler.__children__=[]
+                   handler.__container__=container
+                   handler.toString=->@__app__+":"+@__name__
+                   if parentHid of @runningHandlers
+                       @runningHandlers[parentHid].__children__.push(handler)
+                   # Обертки событий DOM для обработчика
+                   installDOMWrappers(handler,container)
+                   init=(data)=>
+                       for p of data
+                           args[p] = data[p]
+                       if handler.__container__
+                           render=(tpl,args,container)=>
+                              args.config=JAFWConf
+                              doRender=(style)=>
+                                 container.innerHTML=style+JAFW.RenderEngine.render(@__name__+':'+blockName,args)
+                                 handler.init(container,args)
+                                 onload?(handler)
+                                 AppEnvironment::_busy=false
+                                 if AppEnvironment::_putQueue.length
+                                    args=AppEnvironment::_putQueue.shift()
+                                    @put.apply(AppEnvironment::_registered[args.shift()],args)
+                              success=(req)=>
+                                 if req.responseText
+                                    style="""<style scoped="scoped">#{req.responseText}</style>"""
+                                 else
+                                    style=''
+                                 AppEnvironment::_styles[@__name__+':'+blockName]=style
+                                 doRender(style)
+                              error=->
+                                 success({responseText:''})
+                              if not AppEnvironment::_styles[@__name__+':'+blockName]?
+                                 Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.css""",'',success,error)
+                              else
+                                 doRender(AppEnvironment::_styles[@__name__+':'+blockName])
+                           if JAFW.RenderEngine._tpl[@__name__+':'+blockName]?
+                              render(@__name__+':'+blockName,args,handler.__container__)
+                           else
+                              success=(tpl)=>
+                                 JAFW.RenderEngine.loadTemplate(@__name__+':'+blockName,tpl.responseText)
+                                 render(@__name__+':'+blockName,args,handler.__container__)
+                              error=()=>success({responseText:''})
+                              Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.jade""",'',success,error)
+                       else
+                           handler.init(handler.__container__,args)
+                           onload?(handler)
+                           AppEnvironment::_busy=false
+                           if AppEnvironment::_putQueue.length
+                              args=AppEnvironment::_putQueue.shift()
+                              @put.apply(AppEnvironment::_registered[args.shift()],args)
+                   #AppEnvironment::_registered[appName].running.push(handler)
+                   handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
+                   handler.preRender(init,args)
+                   return handler
 
         AppEnvironment::_registered[appName]=new App()
         Object.defineProperty(AppEnvironment::,appName,{
         get:->AppEnvironment::_registered[appName]
         })
+    startView:(appName,blockName,args,container,onLoad)->
+       if AppEnvironment::_registered[appName]?.handlers[blockName]?
+          onLoad(container,args)
+       else
+          AppEnvironment::_inits[appName+':'+blockName]=->
+             onLoad(container,args)
+          script = document.createElement("script");
+          script.type = "text/javascript";
+          script.src="""#{JAFWConf.app_dir}/#{appName}/#{blockName}.js"""
+          #script.async=true
+          document.head.appendChild(script)
 
-    load:(appName,callback)->
-        JAFW.Static.get(appName.replace('.','/'),callback)
+
 ##
 # АСИНХРОННАЯ ПЕРЕДАЧА ДАННЫХ
 ##
@@ -147,8 +189,9 @@ class Ajax
         requestData=JAFW.Url.encode oData
         # Если метод - GET, кладем данные с строку запроса
         if sMethod=='GET'
-            sUrl+="?#{requestData}"
-            requestData=null
+           if requestData
+               sUrl+="?#{requestData}"
+           requestData=null
         # Выполнение асинхронного запроса
         request.open(sMethod,sUrl,true);
         # Заголовок для POST
@@ -180,7 +223,9 @@ class Launcher
                app=@defaultApp
                args=""
             [appName,view]=app.split(':')
-            @containerApps[@sel].__destroy__() if @containerApps[@sel]? and appName!= @containerApps[@sel].__app__
+            if @containerApps[@sel]?
+               return if appName== @containerApps[@sel].__app__ and view==@containerApps[@sel].__name__
+               @containerApps[@sel].__destroy__()
             storeCA= (a)=>
                 @currentView=a
                 # Восстанавливаем последнее состояние представления
@@ -188,7 +233,7 @@ class Launcher
                 if @storedStates[name]?
                     @currentView?.__restore__?(@storedStates[name])
                     delete @storedStates[name]
-                if (not @containerApps[@sel]?) or (@containerApps[@sel].__app__!= a.__app__)
+                if (not @containerApps[@sel]?) or (@containerApps[@sel].__app__!= a.__app__ or @containerApps[@sel].__name__!= a.__name__)
                     @containerApps[@sel]=a
             # сохраняем последнее состояние представления, если есть функция сохранения
             @storedStates[@currentView.__app__+':'+@currentView.__name__]=@currentView.__store__() if @currentView?.__store__?
@@ -232,20 +277,10 @@ JAFW.run=(selector,appSignature,args,onload)->
     [appName,blockName]=name.split(':')
     appName=if ns then ns+':'+appName else appName
     appAccess=appName.replace(':','_')
-    _run=->
-        #if currentApp
-        #    currentApp.__destroy__()
-        JAFW.Apps[appAccess].put(selector,blockName,args)
     if appAccess not of JAFW.Apps._registered
         JAFW.Apps.__Register(appAccess)
-        JAFW.Apps.load appName,->
-            a=_run()
-            onload(a) if onload?
-    else
-        a=_run()
-        onload(a) if onload?
+    JAFW.Apps[appAccess].put(selector,blockName,args,null,onload)
 
 JAFW.__Register('Ajax',Ajax)
-JAFW.__Register('Static',Staticdata)
 JAFW.__Register('Apps',AppEnvironment)
 JAFW.__Register('Launcher',Launcher)
