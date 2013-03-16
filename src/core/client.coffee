@@ -94,6 +94,7 @@ class AppEnvironment
                    console.log("""#{@__name__}:#{blockName}""")
                    @runningHandlers[hid]=new AppEnvironment::_registered[@__name__].handlers[blockName](selector)
                    handler=@runningHandlers[hid]
+                   AppEnvironment::running[selector]=handler
                    handler.__name__=blockName
                    handler.__id__=hid
                    handler.__parent__=parentHid
