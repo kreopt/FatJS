@@ -8,6 +8,7 @@ class AppEnvironment
     _inits:{}
     _putQueue:[]
     _busy:false
+    running:{}
     __Register:(appName)->
         throw('Application already registered') if appName in AppEnvironment::_registered
         class App
@@ -48,6 +49,9 @@ class AppEnvironment
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
                     delete a.runningHandlers[@__id__]
+                body.kill=(selector,app)->
+                   @__destroy__.call(AppEnvironment::running[selector])
+
                 AppEnvironment::_registered[appName].handlersProp[name]=body
                 AppEnvironment::_registered[appName].handlers[name]=->
                     body=AppEnvironment::_registered[appName].handlersProp[name]
