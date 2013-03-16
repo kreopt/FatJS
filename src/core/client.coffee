@@ -239,8 +239,9 @@ class Launcher
             JAFW.run(@sel,app,JAFW.Url.decode(args),storeCA)
         self.onpopstate=(e)=>
             @sel=e.state
-    start:({app,selector,args})->
+    start:({app,selector,args,replaceByURL})->
        args={} if not args
+       replaceByURL=true if not replaceByURL?
        @defaultApp=app
        @defaultContainer=selector
        [appName,view]=app.split(':')
@@ -249,12 +250,14 @@ class Launcher
           @currentView=a
           @containerApps[selector]=a
           # загружаем приложение, указанное в адресной строке
-          hash=window.location.hash.split('#')
-          return if not hash[1]
-          [app,args]=hash[1].substr(1).split('/')
-          return if not app or app==@defaultApp
-          @push({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
+          if replaceByURL
+             hash=window.location.hash.split('#')
+             return if not hash[1]
+             [app,args]=hash[1].substr(1).split('/')
+             return if not app or app==@defaultApp
+             @repl({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
        # сохраняем последнее состояние представления, если есть функция сохранения
+       self.history.pushState?(@defaultContainer,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
        JAFW.run(@defaultContainer,app,args,storeCA)
     back:->
         self.history.back()
