@@ -16,6 +16,6 @@ class JAFW.Session
     set:(sParameter,oValue,sNamespace)->
         storageName=@_storageName(sParameter,sNamespace)
         localStorage[storageName]=JSON.stringify(oValue)
-    remove:(sParameter)->
-        localStorage.removeItem(sParameter)
+    remove:(sParameter,sNamespace)->
+        localStorage.removeItem(@_storageName(sParameter,sNamespace))
     clear:->localStorage.clear()
