@@ -137,8 +137,8 @@ class AppEnvironment
                       loadTemplate =>
                          AppEnvironment::_busy=false
                          if AppEnvironment::_putQueue.length
-                            args=AppEnvironment::_putQueue.shift()
-                            @put.apply(AppEnvironment::_registered[args.shift()],args)
+                            nextargs=AppEnvironment::_putQueue.shift()
+                            @put.apply(AppEnvironment::_registered[nextargs.shift()],nextargs)
                          handler.preRender(init,args)
                    return handler
 
