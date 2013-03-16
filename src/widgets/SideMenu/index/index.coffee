@@ -14,7 +14,7 @@ JAFW.Apps.std_SideMenu.HANDLER 'index',
             else
                 EMIT('MENU_CHANGED',{oldApp:old,newApp:$d(item,'page')})
         if oConfig.items.length
-            selectItem($s('li',$s("##{oConfig.id}")),true)
+            selectItem(@$s('li',$s("##{oConfig.id}")),true)
         addEventBySelector "##{oConfig.id} li",'click',->selectItem(@,false)
     showIndicator:({pageName,value})->
         @hideIndicator({pageName})

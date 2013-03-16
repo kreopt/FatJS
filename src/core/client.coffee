@@ -104,47 +104,37 @@ class AppEnvironment
                        for p of data
                            args[p] = data[p]
                        if handler.__container__
-                           render=(tpl,args,container)=>
-                              args.config=JAFWConf
-                              doRender=(style)=>
-                                 container.innerHTML=style+JAFW.RenderEngine.render(@__name__+':'+blockName,args)
-                                 handler.init(container,args)
-                                 onload?(handler)
-                                 AppEnvironment::_busy=false
-                                 if AppEnvironment::_putQueue.length
-                                    args=AppEnvironment::_putQueue.shift()
-                                    @put.apply(AppEnvironment::_registered[args.shift()],args)
-                              success=(req)=>
-                                 if req.responseText
-                                    style="""<style scoped="scoped">#{req.responseText}</style>"""
-                                 else
-                                    style=''
-                                 AppEnvironment::_styles[@__name__+':'+blockName]=style
-                                 doRender(style)
-                              error=->
-                                 success({responseText:''})
-                              if not AppEnvironment::_styles[@__name__+':'+blockName]?
-                                 Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.css""",'',success,error)
-                              else
-                                 doRender(AppEnvironment::_styles[@__name__+':'+blockName])
-                           if JAFW.RenderEngine._tpl[@__name__+':'+blockName]?
-                              render(@__name__+':'+blockName,args,handler.__container__)
-                           else
-                              success=(tpl)=>
-                                 JAFW.RenderEngine.loadTemplate(@__name__+':'+blockName,tpl.responseText)
-                                 render(@__name__+':'+blockName,args,handler.__container__)
-                              error=()=>success({responseText:''})
-                              Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.jade""",'',success,error)
-                       else
-                           handler.init(handler.__container__,args)
-                           onload?(handler)
-                           AppEnvironment::_busy=false
-                           if AppEnvironment::_putQueue.length
-                              args=AppEnvironment::_putQueue.shift()
-                              @put.apply(AppEnvironment::_registered[args.shift()],args)
+                           args.config=JAFWConf
+                           handler.__container__.innerHTML=AppEnvironment::_styles[@__name__+':'+blockName]+JAFW.RenderEngine.render(@__name__+':'+blockName,args)
+                       handler.init(handler.__container__,args)
+                       onload?(handler)
                    #AppEnvironment::_registered[appName].running.push(handler)
                    handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
-                   handler.preRender(init,args)
+                   loadStyle=(next)=>
+                      success=(req)=>
+                        AppEnvironment::_styles[@__name__+':'+blockName]=if req.responseText then """<style scoped="scoped">#{req.responseText}</style>""" else ""
+                        next()
+                      error=->success({responseText:''})
+                      if not AppEnvironment::_styles[@__name__+':'+blockName]?
+                         Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.css""",'',success,error)
+                      else
+                         next()
+                   loadTemplate=(next)=>
+                      if not JAFW.RenderEngine._tpl[@__name__+':'+blockName]?
+                         success=(tpl)=>
+                            JAFW.RenderEngine.loadTemplate(@__name__+':'+blockName,tpl.responseText)
+                            next()
+                         error=()=>success({responseText:''})
+                         Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.jade""",'',success,error)
+                      else
+                         next()
+                   loadStyle =>
+                      loadTemplate =>
+                         AppEnvironment::_busy=false
+                         if AppEnvironment::_putQueue.length
+                            args=AppEnvironment::_putQueue.shift()
+                            @put.apply(AppEnvironment::_registered[args.shift()],args)
+                         handler.preRender(init,args)
                    return handler
 
         AppEnvironment::_registered[appName]=new App()

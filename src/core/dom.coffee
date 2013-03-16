@@ -85,7 +85,7 @@ self.installDOMWrappers=(oHolder,DOMToplevelScope)->
     oHolder.hasClass=(DOMNode,className)->if DOMNode.classList then DOMNode.classList.contains(className) else false
     oHolder.addClass=(DOMNode,className)->DOMNode.classList.add(className)
     oHolder.addUniqueClass=(DOMNode,sClassName,DOMScope)->
-        DOMScope=document if not DOMScope?
+        DOMScope=scope(DOMScope)
         oldNodes=DOMScope.querySelectorAll('.'+sClassName)
         removeClass(node,sClassName) for node in oldNodes
         addClass(DOMNode,sClassName)
