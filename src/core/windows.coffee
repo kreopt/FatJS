@@ -52,6 +52,7 @@ class LoadIndicator
         document.body.removeChild(el) if el=document.getElementById('Overlay')
 JAFW.LoadIndicator=new LoadIndicator()
 class Window
+    windows:{}
     constructor:->
         CONNECT 'CREATE_WINDOW','show',@
     show:({cls,title,app,args})->
@@ -79,11 +80,13 @@ class Window
         a=@
         $s('.CloseWindow',overlay).onclick= ->a.close($d(@parentNode.parentNode,'id'))
         args.__winId__=id
-        JAFW.run($s('.Content',overlay),app,args)
+        JAFW.run($s('.Content',overlay),app,args,((h)->Window::windows[id]=h))
         $s('body').appendChild(overlay)
         return id
 
     close:(sWindowId)->
+        Window::windows[Number(sWindowId)].__destroy__()
+        delete Window::windows[Number(sWindowId)]
         removeNodesBySelector """.Overlay[data-id="#{sWindowId}"]"""
 JAFW.__Register('WinMan',Window)
 class WindowOld

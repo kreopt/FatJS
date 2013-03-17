@@ -2,13 +2,25 @@
 ##
 # Среда запуска приложений
 ##
+#TODO: Избавиться от избыточности, вводимой различием классов AppEnvironment и App
 class AppEnvironment
     _styles:{}
     _registered:{}
     _inits:{}
     _putQueue:[]
     _busy:false
-    running:{}
+    _running:{}
+    _dirty:false
+    _garbageCollect:(appClass)->
+       if AppEnvironment::_dirty
+          for appId,app of AppEnvironment::_running
+             continue if app.__container__ is null
+             if not app.__container__.parentNode
+                console.log('Destroying app: '+appId)
+                app.__destroy__()
+                delete AppEnvironment::_running[appId]
+                delete appClass.runningHandlers[appId]
+          AppEnvironment::_dirty=false
     __Register:(appName)->
         throw('Application already registered') if appName in AppEnvironment::_registered
         class App
@@ -24,16 +36,14 @@ class AppEnvironment
                     handler.__destroy__()
             HANDLER:(name,body)->
                 a=@
+                body.__app__=appName
                 body.run=(selector,appSignature,args,onload)->
                    JAFW.run(selector,appSignature,args,onload,@__id__)
                 body.put=(selector,blockName,args,onload)->
                   a.put.call(a,selector,blockName,args, @__id__,onload)
-                body.__app__=appName
-                if not body.preRender?
-                    body.preRender=(r,args)->r(args)
                 body.__destroy__=(calledByParent=false)->
                     # удаляем обработчик из списка потомков родителя
-                    if @__parent__ and (not calledByParent)
+                    if @__parent__ and (not calledByParent) and a.runningHandlers[@__parent__]
                         children=a.runningHandlers[@__parent__].__children__
                         for child,childIndex in children
                             if child.__id__==@__id__
@@ -50,7 +60,10 @@ class AppEnvironment
                         @__container__.innerHTML=''
                     delete a.runningHandlers[@__id__]
                 body.kill=(selector,app)->
-                   @__destroy__.call(AppEnvironment::running[selector])
+                   if AppEnvironment::_running[selector]?
+                     @__destroy__.call(AppEnvironment::_running[selector])
+
+                body.preRender=((r,args)->r(args)) if not body.preRender?
 
                 AppEnvironment::_registered[appName].handlersProp[name]=body
                 AppEnvironment::_registered[appName].handlers[name]=->
@@ -81,6 +94,7 @@ class AppEnvironment
                if AppEnvironment::_busy==true
                   AppEnvironment::_putQueue.push([appName,selector,blockName,args,parentHid,onload])
                   return
+               AppEnvironment::_garbageCollect(@)
                AppEnvironment::_busy=true
                AppEnvironment::startView @__name__,blockName,args,selector,=>
                    args={} if not args
@@ -94,12 +108,14 @@ class AppEnvironment
                    console.log("""#{@__name__}:#{blockName}""")
                    @runningHandlers[hid]=new AppEnvironment::_registered[@__name__].handlers[blockName](selector)
                    handler=@runningHandlers[hid]
-                   AppEnvironment::running[selector]=handler
+
                    handler.__name__=blockName
                    handler.__id__=hid
                    handler.__parent__=parentHid
                    handler.__children__=[]
                    handler.__container__=container
+
+                   AppEnvironment::_running[selector]=handler
                    handler.toString=->@__app__+":"+@__name__
                    if parentHid of @runningHandlers
                        @runningHandlers[parentHid].__children__.push(handler)
@@ -111,6 +127,7 @@ class AppEnvironment
                        if handler.__container__
                            args.config=JAFWConf
                            handler.__container__.innerHTML=AppEnvironment::_styles[@__name__+':'+blockName]+JAFW.RenderEngine.render(@__name__+':'+blockName,args)
+                           AppEnvironment::_dirty=true
                        handler.init(handler.__container__,args)
                        onload?(handler)
                    #AppEnvironment::_registered[appName].running.push(handler)
