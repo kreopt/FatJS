@@ -97,32 +97,14 @@ class AppEnvironment
                   return
                AppEnvironment::_garbageCollect(@)
                AppEnvironment::_busy=true
-               AppEnvironment::startView @__name__,blockName,args,selector,=>
+               AppEnvironment::startView @__name__,blockName,args,selector,(appName,blockName,selector,args)=>
+                   appSignature=appName+':'+blockName
                    args={} if not args
 
                    if typeof(selector)==typeof({})
                        container=selector
                    else
                        container=if selector then $s(selector) else null
-
-                   hid=JAFW.__nextID()
-                   console.log("""#{@__name__}:#{blockName}""")
-                   @runningHandlers[hid]=new AppEnvironment::_registered[@__name__].handlers[blockName](selector)
-                   handler=@runningHandlers[hid]
-
-                   handler.__name__=blockName
-                   handler.__id__=hid
-                   handler.__parent__=parentHid
-                   handler.__children__=[]
-                   handler.__container__=container
-                   handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
-
-                   AppEnvironment::_running[selector]=handler
-                   handler.toString=->@__app__+":"+@__name__
-                   if parentHid of @runningHandlers
-                       @runningHandlers[parentHid].__children__.push(handler)
-                   # Обертки событий DOM для обработчика
-                   installDOMWrappers(handler,container)
 
                    loadStyle=(name,next)=>
                       success=(req)=>
@@ -156,8 +138,8 @@ class AppEnvironment
                          args[p] = data[p]
                       if handler.__container__
                          args.config=JAFWConf
-                         styleName=@__name__+':'+blockName
-                         view=JAFW.RenderEngine.render(@__name__+':'+blockName,args)
+                         styleName=appSignature
+                         view=JAFW.RenderEngine.render(appSignature,args)
 
                          #TODO: inheritance chain
                          if handler.__extends__?
@@ -176,8 +158,28 @@ class AppEnvironment
                             initApp(handler,args,onload)
                       else
                          initApp(handler,args,onload)
-                   loadStyle (@__name__+':'+blockName),=>
-                      loadTemplate (@__name__+':'+blockName),=>
+
+                   hid=JAFW.__nextID()
+                   console.log(appSignature)
+                   @runningHandlers[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
+                   handler=@runningHandlers[hid]
+
+                   handler.__name__=blockName
+                   handler.__id__=hid
+                   handler.__parent__=parentHid
+                   handler.__children__=[]
+                   handler.__container__=container
+                   handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
+
+                   AppEnvironment::_running[selector]=handler
+                   handler.toString=->@__app__+":"+@__name__
+                   if parentHid of @runningHandlers
+                      @runningHandlers[parentHid].__children__.push(handler)
+                   # Обертки событий DOM для обработчика
+                   installDOMWrappers(handler,container)
+
+                   loadStyle (appSignature),=>
+                      loadTemplate (appSignature),=>
                          AppEnvironment::_busy=false
                          if AppEnvironment::_putQueue.length
                             nextargs=AppEnvironment::_putQueue.shift()
@@ -189,12 +191,12 @@ class AppEnvironment
         Object.defineProperty(AppEnvironment::,appName,{
         get:->AppEnvironment::_registered[appName]
         })
-    startView:(appName,blockName,args,container,onLoad)->
+    startView:(appName,blockName,args,selector,onLoad)->
        if AppEnvironment::_registered[appName]?.handlers[blockName]?
-          onLoad(container,args)
+          onLoad(appName,blockName,selector,args)
        else
           AppEnvironment::_inits[appName+':'+blockName]=->
-             onLoad(container,args)
+             onLoad(appName,blockName,selector,args)
           script = document.createElement("script");
           script.type = "text/javascript";
           script.src="""#{JAFWConf.app_dir}/#{appName}/#{blockName}.js"""
