@@ -16,7 +16,7 @@ class AppEnvironment
           for appId,app of AppEnvironment::_running
              continue if app.__container__ is null
              if not app.__container__.parentNode
-                console.log('Destroying app: '+appId)
+                console.log('Garbage collector destroying app: '+app.__name__+' at container '+appId)
                 app.__destroy__()
                 delete AppEnvironment::_running[appId]
                 delete appClass.runningHandlers[appId]
@@ -59,6 +59,7 @@ class AppEnvironment
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
                     delete a.runningHandlers[@__id__]
+                    delete AppEnvironment::_running[@__id__]
                 body.kill=(selector,app)->
                    if AppEnvironment::_running[selector]?
                      @__destroy__.call(AppEnvironment::_running[selector])
@@ -114,6 +115,7 @@ class AppEnvironment
                    handler.__parent__=parentHid
                    handler.__children__=[]
                    handler.__container__=container
+                   handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
 
                    AppEnvironment::_running[selector]=handler
                    handler.toString=->@__app__+":"+@__name__
@@ -121,37 +123,61 @@ class AppEnvironment
                        @runningHandlers[parentHid].__children__.push(handler)
                    # Обертки событий DOM для обработчика
                    installDOMWrappers(handler,container)
-                   init=(data)=>
-                       for p of data
-                           args[p] = data[p]
-                       if handler.__container__
-                           args.config=JAFWConf
-                           handler.__container__.innerHTML=AppEnvironment::_styles[@__name__+':'+blockName]+JAFW.RenderEngine.render(@__name__+':'+blockName,args)
-                           AppEnvironment::_dirty=true
-                       handler.init(handler.__container__,args)
-                       onload?(handler)
-                   #AppEnvironment::_registered[appName].running.push(handler)
-                   handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
-                   loadStyle=(next)=>
+
+                   loadStyle=(name,next)=>
                       success=(req)=>
-                        AppEnvironment::_styles[@__name__+':'+blockName]=if req.responseText then """<style scoped="scoped">#{req.responseText}</style>""" else ""
-                        next()
+                         AppEnvironment::_styles[name]=if req.responseText.replace(new RegExp("\\s"),'')!='' then """<style scoped="scoped">#{req.responseText}</style>""" else ""
+                         next()
                       error=->success({responseText:''})
-                      if not AppEnvironment::_styles[@__name__+':'+blockName]?
-                         Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.css""",'',success,error)
+                      if not AppEnvironment::_styles[name]?
+                         path=name.split(':').join('/')
+                         Ajax::get("""#{JAFWConf.app_dir}/#{path}.css""",'',success,error)
                       else
                          next()
-                   loadTemplate=(next)=>
-                      if not JAFW.RenderEngine._tpl[@__name__+':'+blockName]?
+                   loadTemplate=(name,next)=>
+                      if not JAFW.RenderEngine._tpl[name]?
                          success=(tpl)=>
-                            JAFW.RenderEngine.loadTemplate(@__name__+':'+blockName,tpl.responseText)
+                            JAFW.RenderEngine.loadTemplate(name,tpl.responseText)
                             next()
                          error=()=>success({responseText:''})
-                         Ajax::get("""#{JAFWConf.app_dir}/#{@__name__}/#{blockName}.jade""",'',success,error)
+                         path=name.split(':').join('/')
+                         Ajax::get("""#{JAFWConf.app_dir}/#{path}.jade""",'',success,error)
                       else
                          next()
-                   loadStyle =>
-                      loadTemplate =>
+
+                   initApp=(handler,args,onload)->
+                      handler.init(handler.__container__,args)
+                      onload?(handler)
+                   render=(style,view)->
+                      handler.__container__.innerHTML=style+view
+                      AppEnvironment::_dirty=true
+                   init=(data)=>
+                      for p of data
+                         args[p] = data[p]
+                      if handler.__container__
+                         args.config=JAFWConf
+                         styleName=@__name__+':'+blockName
+                         view=JAFW.RenderEngine.render(@__name__+':'+blockName,args)
+
+                         #TODO: inheritance chain
+                         if handler.__extends__?
+                            styleName=handler.__extends__ if AppEnvironment::_styles[styleName]==''
+                            loadStyle styleName, =>
+                               if view == ''
+                                  loadTemplate handler.__extends__,=>
+                                     view=JAFW.RenderEngine.render(handler.__extends__,args)
+                                     render(AppEnvironment::_styles[styleName],view)
+                                     initApp(handler,args,onload)
+                               else
+                                  render(AppEnvironment::_styles[styleName],view)
+                                  initApp(handler,args,onload)
+                         else
+                            render(AppEnvironment::_styles[styleName],view)
+                            initApp(handler,args,onload)
+                      else
+                         initApp(handler,args,onload)
+                   loadStyle (@__name__+':'+blockName),=>
+                      loadTemplate (@__name__+':'+blockName),=>
                          AppEnvironment::_busy=false
                          if AppEnvironment::_putQueue.length
                             nextargs=AppEnvironment::_putQueue.shift()
