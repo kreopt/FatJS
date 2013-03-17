@@ -85,7 +85,7 @@ class AppEnvironment
                       JAFW.Apps.__Register(eappAccess)
                    AppEnvironment::startView eappAccess,eblockName,{},null,=>
                       extendable=AppEnvironment::_registered[appName].handlersProp[name]
-                      extendable.__super__=AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
+                      extendable.__super__=new AppEnvironment::_registered[eappAccess].handlers[eblockName]()
                       for prop,val of AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
                          extendable[prop]=val if not extendable[prop]?
                       AppEnvironment::_inits[appName+':'+name](AppEnvironment::_registered[appName].handlers[name])
