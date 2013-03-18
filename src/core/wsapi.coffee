@@ -57,7 +57,6 @@ class self.WebSocketBus extends IBus
             EMIT '=WSAPI_REQUEST',msg.data,msg.seq
          else if msg.type == 'error'
             EMIT 'ERROR', {body: msg.data}
-            Session::clear()
          else if msg.type=='businit'
             @remoteHandles=msg.handles
             fOnOpen()
