@@ -32,15 +32,17 @@ runserver=(router,options)->
             d=new Date()
             console.log('['+d.toLocaleDateString()+' '+d.toLocaleString()+']'+url.parse(request.url).pathname);
 
-            postData=''
-            request.setEncoding("utf8");
+            #postData=''
+            #request.setEncoding("utf8");
+            postData=[]
+            #request.setEncoding("utf8");
             request.addListener "data", (postDataChunk)->
-                postData += postDataChunk;
-                console.info("Received POST data chunk '"+postDataChunk + "'.");
+                postData.push( new Buffer(postDataChunk,'binary'))
             responseCallback=(result,status=200,head={"Content-Type": "text/plain"})->
                makeResponse(response,result,status,head)
             request.addListener "end", ->
                 try
+                    postData=Buffer.concat(postData)
                     handleRequest=->router.handle(request,responseCallback,postData)
                     asyncCatch(handleRequest).catch((e)->
                        makeResponse(response,JSON.stringify({type:'error',data:e.stack}))
