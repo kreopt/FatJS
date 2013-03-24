@@ -1,0 +1,7 @@
+24.03.2013 23:15:10	ERROR    Traceback (most recent call last):
+  File "socketServer.py", line 141, in nodaemon
+    bus.emit({'name': 'test.bus.signal'})
+  File "socketServer.py", line 84, in emit
+    if signal.name in connTable:
+AttributeError: 'dict' object has no attribute 'name'
+
