@@ -6,6 +6,7 @@ class Notifier
     notify:({head,body})->JAFW.Notifier.show(head,body,'Notify')
     show:(sHead,sBody,sType='Notify',iTimeout=5000)->
         notify=$c('div')
+        sHead='' if not sHead
         #TODO: сделать более гибким не прибегая к шаблонам
         notify.innerHTML="""<div class="NotifyHead">#{sHead}</div><div class="NotifyText">#{sBody}</div>""";
         notify.className='Notify Notify_'+sType;
@@ -13,7 +14,6 @@ class Notifier
         height=0;
         for notification in notifications
             height+=notification.clientHeight+12+3;
-        notify.style.top=60+height+'px';
         $s('body').appendChild(notify);
         if iTimeout
             notify.timeout=setTimeout((=>@hide(notify,sType)), iTimeout)

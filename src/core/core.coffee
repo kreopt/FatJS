@@ -10,13 +10,17 @@ self.logDebug=()->
 DEBUG=0
 # COMMON
 class JAFWCore
-    _uid:0
+    _uids:{
+      '$':0
+    }
     _mods:{}
     _tpls:{}
     ##
     # Генератор уникальных в пределах сессии ID
     ##
-    __nextID:->JAFWCore::_uid++
+    __nextID:(seqName='$')->
+       JAFWCore::_uids[seqName]=0 if not JAFWCore::_uids[seqName]
+       JAFWCore::_uids[seqName]++
     ##
     # Регистрация модулей
     ##

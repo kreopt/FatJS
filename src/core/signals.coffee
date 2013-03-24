@@ -11,6 +11,8 @@ class self.IBus
    sighandler: (signal)->
 self.registerBus = (name, oBus)->
    registeredBuses[name] = oBus
+self.getBus=(name)->
+   registeredBuses[name]
 ###
     СИГНАЛЫ
 
