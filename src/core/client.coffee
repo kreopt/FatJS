@@ -32,6 +32,7 @@ class AppEnvironment
             constructor:->
                 CONNECT 'inSide.Apps.'+@__name__+'.destroy','__destroy__',@
             __destroy__:->
+                @__super__?.__destroy__()
                 for hid,handler of @runningHandlers
                     handler.__destroy__()
             HANDLER:(name,body)->
@@ -71,9 +72,16 @@ class AppEnvironment
                     body=AppEnvironment::_registered[appName].handlersProp[name]
                     for p of body
                         @[p]=body[p]
-                    for p,v of body.__super__
-                       if typeof(body.__super__[p])==typeof(->)
-                          body.__super__[p]=v.bind(@)
+                    if body.__extends__
+                       [ns,nm]=body.__extends__.split('::')
+                       [ns,nm]=['',ns] if not nm
+                       [eappName,eblockName]=nm.split(':')
+                       eappName=if ns then ns+':'+eappName else eappName
+                       eappAccess=eappName.replace(':','_')
+                       @.__super__=new AppEnvironment::_registered[eappAccess].handlers[eblockName]()
+                       for p,v of @.__super__
+                          if typeof(@.__super__[p])==typeof(->)
+                             @.__super__[p]=v.bind(@)
                     undefined
                 if body.__extends__?
                    [ns,nm]=body.__extends__.split('::')
@@ -85,7 +93,6 @@ class AppEnvironment
                       JAFW.Apps.__Register(eappAccess)
                    AppEnvironment::startView eappAccess,eblockName,{},null,=>
                       extendable=AppEnvironment::_registered[appName].handlersProp[name]
-                      extendable.__super__=new AppEnvironment::_registered[eappAccess].handlers[eblockName]()
                       for prop,val of AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
                          extendable[prop]=val if not extendable[prop]?
                       AppEnvironment::_inits[appName+':'+name](AppEnvironment::_registered[appName].handlers[name])
