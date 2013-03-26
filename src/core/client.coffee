@@ -32,7 +32,7 @@ class AppEnvironment
                 CONNECT 'inSide.Apps.'+@__name__+'.destroy','__destroy__',@
             __destroy__:->
                 @__super__?.__destroy__()
-                for hid,handler of AppEnvironment::runningHandlers
+                for hid,handler of AppEnvironment::_running
                     handler.__destroy__()
             HANDLER:(name,body)->
                 a=@
@@ -89,8 +89,8 @@ class AppEnvironment
                    [eappName,eblockName]=nm.split(':')
                    eappName=if ns then ns+':'+eappName else eappName
                    eappAccess=eappName.replace(':','_')
-                   if eappAccess not of JAFW.Apps._registered
-                      JAFW.Apps.__Register(eappAccess)
+                   if eappAccess not of AppEnvironment::_registered
+                      AppEnvironment::__Register(eappAccess)
                    AppEnvironment::startView eappAccess,eblockName,{},null,=>
                       extendable=AppEnvironment::_registered[appName].handlersProp[name]
                       for prop,val of AppEnvironment::_registered[eappAccess].handlersProp[eblockName]
@@ -332,9 +332,9 @@ JAFW.run=(selector,appSignature,args,onload,parentId=null)->
     [appName,blockName]=name.split(':')
     appName=if ns then ns+':'+appName else appName
     appAccess=appName.replace(':','_')
-    if appAccess not of JAFW.Apps._registered
-        JAFW.Apps.__Register(appAccess)
-    JAFW.Apps[appAccess].put(selector,blockName,args,parentId,onload)
+    if appAccess not of AppEnvironment::_registered
+       AppEnvironment::__Register(appAccess)
+    AppEnvironment::_registered[appAccess].put(selector,blockName,args,parentId,onload)
 
 JAFW.__Register('Ajax',Ajax)
 JAFW.__Register('Apps',AppEnvironment)
