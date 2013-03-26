@@ -6,6 +6,7 @@
 class AppEnvironment
     _styles:{}
     _registered:{}
+    _selectorHandlers:{}
     _inits:{}
     _putQueue:[]
     _busy:false
@@ -19,7 +20,6 @@ class AppEnvironment
                 console.log('Garbage collector destroying app: '+app.__name__+' at container '+appId)
                 app.__destroy__()
                 delete AppEnvironment::_running[appId]
-                delete appClass.runningHandlers[appId]
           AppEnvironment::_dirty=false
     __Register:(appName)->
         throw('Application already registered') if appName in AppEnvironment::_registered
@@ -27,13 +27,12 @@ class AppEnvironment
             __name__:appName
             handlers:{}
             handlersProp:{}
-            runningHandlers:{}
             toString:->@__name__
             constructor:->
                 CONNECT 'inSide.Apps.'+@__name__+'.destroy','__destroy__',@
             __destroy__:->
                 @__super__?.__destroy__()
-                for hid,handler of @runningHandlers
+                for hid,handler of AppEnvironment::runningHandlers
                     handler.__destroy__()
             HANDLER:(name,body)->
                 a=@
@@ -43,27 +42,28 @@ class AppEnvironment
                 body.put=(selector,blockName,args,onload)->
                   a.put.call(a,selector,blockName,args, @__id__,onload)
                 body.__destroy__=(calledByParent=false)->
+                    console.log('Destroying '+@__app__+':'+@__name__)
                     # удаляем обработчик из списка потомков родителя
-                    if @__parent__ and (not calledByParent) and a.runningHandlers[@__parent__]
-                        children=a.runningHandlers[@__parent__].__children__
+                    if @__parent__ and (not calledByParent) and AppEnvironment::_running[@__parent__]
+                        children=AppEnvironment::_running[@__parent__].__children__
                         for child,childIndex in children
                             if child.__id__==@__id__
-                                a.runningHandlers[@__parent__].__children__.splice(childIndex,1)
-                                break
+                               AppEnvironment::_running[@__parent__].__children__.splice(childIndex,1)
+                               break
                     DISCONNECT('*','*',@)
                     # Пользовательский деструктор
                     @destroy() if @destroy?
-                    return if not a.runningHandlers[@__id__]?
+                    return if not AppEnvironment::_running[@__id__]?
                     # Вызов деструкторов потомков
-                    for c in a.runningHandlers[@__id__].__children__
+                    for c in AppEnvironment::_running[@__id__].__children__
                         c.__destroy__(true)
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
-                    delete a.runningHandlers[@__id__]
                     delete AppEnvironment::_running[@__id__]
                 body.kill=(selector,app)->
-                   if AppEnvironment::_running[selector]?
-                     @__destroy__.call(AppEnvironment::_running[selector])
+                   appId=AppEnvironment::_selectorHandlers[selector]
+                   if AppEnvironment::_running[appId]?
+                      @__destroy__.call(AppEnvironment::_running[appId])
 
                 body.preRender=((r,args)->r(args)) if not body.preRender?
 
@@ -166,10 +166,11 @@ class AppEnvironment
                       else
                          initApp(handler,args,onload)
 
-                   hid=JAFW.__nextID()
+                   hid=JAFW.__nextID('inSideHandler')
                    console.log(appSignature)
-                   @runningHandlers[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
-                   handler=@runningHandlers[hid]
+                   AppEnvironment::_running[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
+                   AppEnvironment::_selectorHandlers[selector]=hid
+                   handler=AppEnvironment::_running[hid]
 
                    handler.__name__=blockName
                    handler.__id__=hid
@@ -178,10 +179,10 @@ class AppEnvironment
                    handler.__container__=container
                    handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
 
-                   AppEnvironment::_running[selector]=handler
+
                    handler.toString=->@__app__+":"+@__name__
-                   if parentHid of @runningHandlers
-                      @runningHandlers[parentHid].__children__.push(handler)
+                   if parentHid of AppEnvironment::_running
+                      AppEnvironment::_running[parentHid].__children__.push(handler)
                    # Обертки событий DOM для обработчика
                    installDOMWrappers(handler,container)
 
