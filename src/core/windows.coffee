@@ -41,6 +41,7 @@ class LoadIndicator
             overlay.style.top='0px'
             overlay.style.left='0px'
             overlay.style.background='rgba(0,0,0,0.5)'
+            overlay.style.zIndex='9999'
             overlay.id='Overlay'
             indicator=document.createElement('div')
             indicator.id='LoadIndicator'
