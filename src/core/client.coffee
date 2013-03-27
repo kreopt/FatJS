@@ -12,6 +12,9 @@ class AppEnvironment
     _busy:false
     _running:{}
     _dirty:false
+    kill:(selector)->
+       appId=AppEnvironment::_selectorHandlers[selector]
+       AppEnvironment::_running[appId]?.__destroy__()
     _garbageCollect:(appClass)->
        if AppEnvironment::_dirty
           for appId,app of AppEnvironment::_running
@@ -60,11 +63,8 @@ class AppEnvironment
                     if @__container__?.innerHTML?
                         @__container__.innerHTML=''
                     delete AppEnvironment::_running[@__id__]
-                body.kill=(selector,app)->
-                   appId=AppEnvironment::_selectorHandlers[selector]
-                   if AppEnvironment::_running[appId]?
-                      @__destroy__.call(AppEnvironment::_running[appId])
 
+                body.kill=(selector)->AppEnvironment::kill(selector)
                 body.preRender=((r,args)->r(args)) if not body.preRender?
 
                 AppEnvironment::_registered[appName].handlersProp[name]=body
@@ -262,22 +262,20 @@ class Launcher
         @sel='#jafw_container'
         @defaultSelector='#jafw_container'
         @defaultApp='Main:index'
-        @containerApps={}
         @currentView=null
         @storedStates={}
         # обработчик изменения хеша в адресной строке
         self.onhashchange= (e)=>
             @sel=@defaultSelector if not @sel
-            hash=e.newURL.split('#')
+            hash=e.newURL.split('#!')
             if hash[1]
                [app,args]=hash[1].substr(1).split('/')
             else
                app=@defaultApp
                args=""
+            EMIT 'inSide.launcher.hashChange',{app}
             [appName,view]=app.split(':')
-            if @containerApps[@sel]?
-               return if appName== @containerApps[@sel].__app__ and view==@containerApps[@sel].__name__
-               @containerApps[@sel].__destroy__()
+            AppEnvironment::kill(@sel)
             storeCA= (a)=>
                 @currentView=a
                 # Восстанавливаем последнее состояние представления
@@ -285,8 +283,6 @@ class Launcher
                 if @storedStates[name]?
                     @currentView?.__restore__?(@storedStates[name])
                     delete @storedStates[name]
-                if (not @containerApps[@sel]?) or (@containerApps[@sel].__app__!= a.__app__ or @containerApps[@sel].__name__!= a.__name__)
-                    @containerApps[@sel]=a
             # сохраняем последнее состояние представления, если есть функция сохранения
             @storedStates[@currentView.__app__+':'+@currentView.__name__]=@currentView.__store__() if @currentView?.__store__?
             JAFW.run(@sel,app,JAFW.Url.decode(args),storeCA)
@@ -298,30 +294,29 @@ class Launcher
        @defaultApp=app
        @defaultContainer=selector
        [appName,view]=app.split(':')
-       @containerApps[selector].__destroy__() if @containerApps[selector]? and appName!= @containerApps[selector].__app__
+       AppEnvironment::kill(selector)
        storeCA= (a)=>
           @currentView=a
-          @containerApps[selector]=a
           # загружаем приложение, указанное в адресной строке
           if replaceByURL
-             hash=window.location.hash.split('#')
+             hash=window.location.hash.split('#!')
              return if not hash[1]
              [app,args]=hash[1].substr(1).split('/')
              return if not app or app==@defaultApp
              @repl({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
        # сохраняем последнее состояние представления, если есть функция сохранения
-       self.history.pushState?(@defaultContainer,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
+       self.history.pushState?(@defaultContainer,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#!/#{app}/#{JAFW.Url.encode(args)}")
        JAFW.run(@defaultContainer,app,args,storeCA)
     back:->
         self.history.back()
     push:({cont,app,args})->
-        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#!/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
-        self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
+        self.onhashchange({newURL:"/#!/#{app}/#{JAFW.Url.encode(args)}"})
     repl:({cont,app,args})->
-        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#!/#{app}/#{JAFW.Url.encode(args)}")
         @sel=cont
-        self.onhashchange({newURL:"/#/#{app}/#{JAFW.Url.encode(args)}"})
+        self.onhashchange({newURL:"/#!/#{app}/#{JAFW.Url.encode(args)}"})
 ##
 # Запуск блока приложения
 ##

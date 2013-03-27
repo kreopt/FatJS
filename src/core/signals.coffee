@@ -37,7 +37,7 @@ validateSignal = (sSignal)->
 # Таблица соединений сигналов и объектов
 __connectionTable = {}
 addConnection = (sSignal, sSlot, oReceiver, fSlot)->
-   objectName=oReceiver.toString()
+   objectName=oReceiver.__id__
    __connectionTable[sSignal] = {} if not __connectionTable[sSignal]?
    __connectionTable[sSignal][objectName] = {instance: oReceiver, slots:
       {}} if not __connectionTable[sSignal][objectName]?
@@ -47,7 +47,7 @@ addConnection = (sSignal, sSlot, oReceiver, fSlot)->
       __connectionTable[sSignal][objectName].slots[sSlot] = oReceiver[sSlot]
    sSlot
 removeConnection = (sSignal, sSlot, oReceiver)->
-   objectName=oReceiver.toString()
+   objectName=oReceiver.__id__
    if sSignal == '*'
       for sig of __connectionTable
          delete __connectionTable[sig][objectName] if __connectionTable[sig] ? [objectName]?
@@ -106,7 +106,9 @@ self.CONNECT = (sSignal, sSlot, oReceiver, UID = null)->
       fSlot=sSlot
       sSlot = JAFW.__nextID()
    else
-      throw "No such slot: #{sSlot}" if not oReceiver[sSlot]?
+      if not oReceiver[sSlot]?
+         console.log('failed to connect: '+sSignal+' -> '+sSlot)
+         throw "No such slot: #{sSlot}"
    addConnection(sSignal, sSlot, oReceiver, fSlot)
 # Порождение сигнала
 # sSignal - название сигнала
