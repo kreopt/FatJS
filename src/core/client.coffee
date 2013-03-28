@@ -56,6 +56,7 @@ class AppEnvironment
                     DISCONNECT('*','*',@)
                     # Пользовательский деструктор
                     @destroy() if @destroy?
+                    @__super__?.destroy?()
                     return if not AppEnvironment::_running[@__id__]?
                     # Вызов деструкторов потомков
                     for c in AppEnvironment::_running[@__id__].__children__
@@ -208,7 +209,9 @@ class AppEnvironment
           script = document.createElement("script");
           script.type = "text/javascript";
           script.src="""#{JAFWConf.app_dir}/#{appName}/#{blockName}.js"""
-          #script.async=true
+          script.onerror=->
+             AppEnvironment::_busy=false
+          script.async=true
           document.head.appendChild(script)
 
 

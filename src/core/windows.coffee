@@ -68,6 +68,7 @@ class Window
         overlay.style.left='0px'
         overlay.style.background='rgba(0,0,0,0.5)'
         overlay.style.overflow='auto'
+        overlay.style.zIndex='9999'
 
         resize=->
             overlay.style.height=window.innerHeight+'px'
