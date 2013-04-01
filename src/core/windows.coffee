@@ -14,6 +14,7 @@ class Notifier
         height=0;
         for notification in notifications
             height+=notification.clientHeight+12+3;
+        notify.style.top=height+'px'
         $s('body').appendChild(notify);
         if iTimeout
             notify.timeout=setTimeout((=>@hide(notify,sType)), iTimeout)

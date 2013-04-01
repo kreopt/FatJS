@@ -44,6 +44,17 @@ self.installDOMWrappers=(oHolder,DOMToplevelScope)->
         el=DOMScope
         classes.forEach (e,i)=>el=if (i<classes.length-1) then $s('.'+e,el) else $a('.'+e,el)
         el
+    oHolder.$p=(sSelector,DOMScope)->
+       throw 'Child node must be specified!' if not DOMScope
+       parent=DOMScope
+       while parent.parentNode
+          parent=parent.parentNode
+          # TODO: get only direct children
+          matches=parent.parentNode?.querySelectorAll(sSelector)
+          for match in matches
+             if match==parent
+                return parent
+       return null
     oHolder.$s=(sSelector,DOMScope)->
         el=scope(DOMScope).querySelector(sSelector)
         if not el
