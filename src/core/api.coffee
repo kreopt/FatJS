@@ -38,12 +38,19 @@ class API
       if JAFWConf.useWSAPI==1
          requestData.type='api'
          requestData.seq=JAFW.__nextID()
-         if typeof(fSuccess)!=typeof(->)
-            fSuccess=->
+         success=(args)->
+            if args.status==1
+               fError?(args.data)
+            else
+               fSuccess?(args.data)
+         ###
          EMIT_AND_WAIT({
             toString:->'wsapi'
             __id__:requestData.seq
-         },'WSAPI_REQUEST',requestData,fSuccess)
+         },'WSAPI_REQUEST',requestData,success)
+         ###
+         bus=getBus('wsbus')
+         bus.apiRequest2(requestData, success, fError)
       else
          requestData = JAFW.Url.encode requestData
          @_sendRequest(requestData, fSuccess, fError)

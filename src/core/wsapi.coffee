@@ -32,6 +32,8 @@ JAFW::__Register('WSAPI',WSAPI
 class self.WebSocketBus extends IBus
    toString:->'WebSocketBus'
    constructor:(sUrl,fOnOpen)->
+      @rhandlers={}
+      @handlers={}
       @setupConnection(sUrl,fOnOpen)
       CONNECT 'WSAPI_REQUEST','apiRequest',@
    setupConnection: (sUrl,fOnOpen)->
@@ -40,6 +42,8 @@ class self.WebSocketBus extends IBus
          Входящий сигнал: sig:bus.sockId.objId
       ###
       @remoteHandles={}
+      @busy=false
+      @queue=[]
       @UID=JAFW.__nextID()
       @ws = io.connect(sUrl)
       @ws.on 'connect', =>
@@ -54,12 +58,32 @@ class self.WebSocketBus extends IBus
             #TODO: parseSender
             EMIT msg.signal,(if msg.data then msg.data else {}),msg.sender
          else if msg.type=='api'
-            EMIT '=WSAPI_REQUEST',msg.data,msg.seq
+            #EMIT '=WSAPI_REQUEST',{status:0,data:msg.data},msg.seq
+            @rhandlers[Number(msg.seq)].success({status:0,data:msg.data})
+            delete @rhandlers[Number(msg.seq)]
+            @busy=false
+            if @queue.length
+               req=@queue.shift()
+               if req
+                  @apiRequest2(req,@rhandlers[Number(req.seq)].success,@rhandlers[Number(req.seq)].error)
          else if msg.type == 'error'
             EMIT 'ERROR', {body: msg.data}
+            if msg.errtype=='api'
+               #EMIT '=WSAPI_REQUEST',{status:1,data:msg.data},msg.seq
+               @rhandlers[Number(msg.seq)].error({status:1,data:msg.data})
+               delete @rhandlers[Number(msg.seq)]
+               @busy=false
+               if @queue.length
+                  req=@queue.shift()
+                  if req
+                     @apiRequest2(req,@rhandlers[Number(req.seq)].success,@rhandlers[Number(req.seq)].error)
          else if msg.type=='businit'
             @remoteHandles=msg.handles
             fOnOpen()
+         else if msg.type of @handlers
+               @handlers[msg.type](msg)
+   addHandler:(type,handler)->
+      @handlers[type]=handler
    sighandler:(signal)->
       if ('signal' of signal)
          if (signal.signal in @remoteHandles)
@@ -75,3 +99,11 @@ class self.WebSocketBus extends IBus
          return null
       else
          throw 'Bad API request'
+   apiRequest2:(oRequest, success, error)->
+      @rhandlers[Number(oRequest.seq)]={success,error}
+      if not @busy
+         @busy=true
+         logDebug('SEND> ',oRequest)
+         @ws.send(JSON.stringify(oRequest))
+      else
+         @queue.push(oRequest)
