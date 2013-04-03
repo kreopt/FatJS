@@ -70,7 +70,7 @@ class self.WebSocketBus extends IBus
             EMIT 'ERROR', {body: msg.data}
             if msg.errtype=='api'
                #EMIT '=WSAPI_REQUEST',{status:1,data:msg.data},msg.seq
-               @rhandlers[Number(msg.seq)].error({status:1,data:msg.data})
+               @rhandlers[Number(msg.seq)].error?({status:1,data:msg.data})
                delete @rhandlers[Number(msg.seq)]
                @busy=false
                if @queue.length
