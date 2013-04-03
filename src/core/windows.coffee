@@ -1,9 +1,9 @@
 class Notifier
-    success:({head,body})->JAFW.Notifier.show(head,body,'Success')
-    alert:({head,body})->JAFW.Notifier.show(head,body,'Alert',0)
-    banner:({head,body})->JAFW.Notifier.show(head,body,'Banner')
-    error:({body})->JAFW.Notifier.show('Ошибка',body,'Error')
-    notify:({head,body})->JAFW.Notifier.show(head,body,'Notify')
+    success:({head,body})->inSide.Notifier.show(head,body,'Success')
+    alert:({head,body})->inSide.Notifier.show(head,body,'Alert',0)
+    banner:({head,body})->inSide.Notifier.show(head,body,'Banner')
+    error:({body})->inSide.Notifier.show('Ошибка',body,'Error')
+    notify:({head,body})->inSide.Notifier.show(head,body,'Notify')
     show:(sHead,sBody,sType='Notify',iTimeout=5000)->
         notify=$c('div')
         sHead='' if not sHead
@@ -27,7 +27,7 @@ class Notifier
         if (notifications.length>0)
             for ntf in notifications
                 ntf.style.top=ntf.offsetTop-oldHeight+'px';
-JAFW.__Register('Notifier',Notifier)
+inSide.__Register('Notifier',Notifier)
 ##
 # LOAD INDICATOR
 ##
@@ -52,13 +52,13 @@ class LoadIndicator
         document.body.appendChild(LoadIndicator::indicator)
     hide:->
         document.body.removeChild(el) if el=document.getElementById('Overlay')
-JAFW.LoadIndicator=new LoadIndicator()
+inSide.LoadIndicator=new LoadIndicator()
 class Window
     windows:{}
     constructor:->
         CONNECT 'CREATE_WINDOW','show',@
     show:({cls,title,app,args})->
-        id=JAFW.__nextID()
+        id=inSide.__nextID()
         overlay=$c('div')
         overlay.className='Overlay'
         overlay.setAttribute('data-id',id)
@@ -77,13 +77,13 @@ class Window
         window.addEventListener('resize',resize,false)
         overlay.innerHTML="""<div class="WINDOW #{cls}" id="WIN_#{id}" data-id="#{id}" draggable="true">
                           <header class="WindowHead"><span style="padding-left: 20px;font-weight: bold">#{title}</span>
-                          <img class="CloseWindow" style="float: right;cursor:pointer" class="point" height="16" src="#{JAFWConf.img_dir}/Icons/cross.svg"/>
+                          <img class="CloseWindow" style="float: right;cursor:pointer" class="point" height="16" src="#{inSideConf.img_dir}/Icons/cross.svg"/>
                           </header><section class="Content"></section></div>
                           """
         a=@
         $s('.CloseWindow',overlay).onclick= ->a.close($d(@parentNode.parentNode,'id'))
         args.__winId__=id
-        JAFW.run($s('.Content',overlay),app,args,((h)->Window::windows[id]=h))
+        inSide.run($s('.Content',overlay),app,args,((h)->Window::windows[id]=h))
         $s('body').appendChild(overlay)
         return id
 
@@ -91,7 +91,7 @@ class Window
         Window::windows[Number(sWindowId)].__destroy__()
         delete Window::windows[Number(sWindowId)]
         removeNodesBySelector """.Overlay[data-id="#{sWindowId}"]"""
-JAFW.__Register('WinMan',Window)
+inSide.__Register('WinMan',Window)
 class WindowOld
     windows:{}
     buttons:{
@@ -105,7 +105,7 @@ class WindowOld
         'SAVE':'Сохранить'
     }
     show:(sWindowHtml,aButtonSet)->
-        id=JAFW.nextID()
+        id=inSide.nextID()
         window=$c('div')
         window.className='WINDOW'
         window.id="WIN_#{id}"
@@ -113,21 +113,21 @@ class WindowOld
         buttonHtml='<div style="margin:auto"><table style="margin:auto"><tr>'
         aButtonSet=[] if not aButtonSet?
         for btn in aButtonSet
-            buttonHtml+='<td><button id="WIN_'+id+'_'+btn+'">'+JAFW.Window::buttons[btn]+'</button></td>'
+            buttonHtml+='<td><button id="WIN_'+id+'_'+btn+'">'+inSide.Window::buttons[btn]+'</button></td>'
         buttonHtml+='</tr></table></div>'
         window.innerHTML=sWindowHtml+buttonHtml
         $s('body').appendChild(window)
-        JAFW.Window::windows[id]={handlers:{}}
+        inSide.Window::windows[id]={handlers:{}}
         for btn in aButtonSet
             ((btn)->$s('#WIN_'+id+'_'+btn).onclick=->
-                if JAFW.Window::windows[id].handlers[btn]
-                    JAFW.Window::windows[id].handlers[btn]()
+                if inSide.Window::windows[id].handlers[btn]
+                    inSide.Window::windows[id].handlers[btn]()
                 else
-                    JAFW.Window::close(id)
+                    inSide.Window::close(id)
             )(btn)
         id
     showModal:(sWindowHtml,aButtonSet,oParams)->
-        id=JAFW.nextID()
+        id=inSide.nextID()
         overlay=$c('div')
         overlay.id='Overlay_'+id
         overlay.className='Overlay'
@@ -146,7 +146,7 @@ class WindowOld
         buttonHtml='<div style="margin:auto"><table style="margin:auto"><tr>'
         aButtonSet=[] if not aButtonSet?
         for btn in aButtonSet
-            buttonHtml+='<td><button id="WIN_'+id+'_'+btn+'">'+JAFW.Window::buttons[btn]+'</button></td>'
+            buttonHtml+='<td><button id="WIN_'+id+'_'+btn+'">'+inSide.Window::buttons[btn]+'</button></td>'
         buttonHtml+='</tr></table></div>'
         overlay.innerHTML="""<div class="WINDOW" id="WIN_#{id}">#{sWindowHtml+buttonHtml}</div>"""
         $s('body').appendChild(overlay)
@@ -157,19 +157,19 @@ class WindowOld
             $s('.WINDOW',overlay).style.height=oParams.h+'px';
         $s('.WINDOW',overlay).style.margin='auto auto'
 
-        JAFW.Window::windows[id]={handlers:{}}
+        inSide.Window::windows[id]={handlers:{}}
         for btn in aButtonSet
             ((btn)->$s('#WIN_'+id+'_'+btn).onclick=->
-                if JAFW.Window::windows[id].handlers[btn]
-                    if JAFW.Window::windows[id].handlers[btn]()
-                        JAFW.Window::close(id)
+                if inSide.Window::windows[id].handlers[btn]
+                    if inSide.Window::windows[id].handlers[btn]()
+                        inSide.Window::close(id)
                 else
-                    JAFW.Window::close(id)
+                    inSide.Window::close(id)
             )(btn)
         id
     close:(sWindowId)->
         removeNodesBySelector "#Overlay_#{sWindowId}"
         removeNodesBySelector "#WIN_#{sWindowId}"
-        delete JAFW.Window::windows[sWindowId]
+        delete inSide.Window::windows[sWindowId]
     setBtnHandler:(sWindowId,sBtnType,sHandler)->
-        JAFW.Window::windows[sWindowId].handlers[sBtnType]=sHandler
+        inSide.Window::windows[sWindowId].handlers[sBtnType]=sHandler

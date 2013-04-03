@@ -104,7 +104,7 @@ self.CONNECT = (sSignal, sSlot, oReceiver, UID = null)->
    # Если sSlot - функция, генерируем UID и подписываем объект на анонимную функцию
    if (typeof sSlot == typeof(->))
       fSlot=sSlot
-      sSlot = JAFW.__nextID()
+      sSlot = inSide.__nextID()
    else
       if not oReceiver[sSlot]?
          console.log('failed to connect: '+sSignal+' -> '+sSlot)

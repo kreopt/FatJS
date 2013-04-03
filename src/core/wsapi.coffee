@@ -27,7 +27,7 @@ class WSAPI
             @ws.send(JSON.stringify(realRequest))
         else
             throw 'Bad server request'
-JAFW::__Register('WSAPI',WSAPI
+inSide::__Register('WSAPI',WSAPI
 ###
 class self.WebSocketBus extends IBus
    toString:->'WebSocketBus'
@@ -44,7 +44,7 @@ class self.WebSocketBus extends IBus
       @remoteHandles={}
       @busy=false
       @queue=[]
-      @UID=JAFW.__nextID()
+      @UID=inSide.__nextID()
       @ws = io.connect(sUrl)
       @ws.on 'connect', =>
          console.debug('connected')

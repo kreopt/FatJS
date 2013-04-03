@@ -1,8 +1,8 @@
-JAFW.Apps.std_SideMenu.HANDLER 'index',
+inSide.Apps.std_SideMenu.HANDLER 'index',
     init:(DOMContainer,oConfig)->
         @container=DOMContainer
         @menuId=oConfig.id
-        addClass(@container,'JAFW_SideMenu')
+        addClass(@container,'inSide_SideMenu')
         CONNECT 'SHOW_INDICATOR','showIndicator',@
         CONNECT 'HIDE_INDICATOR','hideIndicator',@
 

@@ -1,13 +1,13 @@
 class RemoteBus
     constructor:(sConnectionString)->
     postData:(oMessage)->
-JAFW.signal={
+inSide.signal={
     meta:{OID:'ObjectID',BID:'BusID'},
     name:'SignalName',
     data:{},
     ext:{}
 }
-class JAFW.Bus
+class inSide.Bus
     constructor:->
         @__services=[]
         @__buses=[]

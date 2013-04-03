@@ -27,7 +27,7 @@ class API
          handler=if result.status == 0 then fSuccess else fError
          handler?(result.data)
       errorHandler=(oRequest)->fError?(oRequest.statusText)
-      JAFW.Ajax.post(@gatewayURL, sRequestData, successHandler, errorHandler)
+      inSide.Ajax.post(@gatewayURL, sRequestData, successHandler, errorHandler)
    # API-вызов
    # sSignature - сигнатура нужного метода в формате Module.method
    # oArgs - параметры метода. Имена параметров должны начинаться с обозначения типа: [n=i=integer,f=float,s=string,o=complex object]
@@ -35,9 +35,9 @@ class API
       [module..., method]=sSignature.split('.')
       requestData={mod: module.join('.'), method: method, data: oArgs, meta:{}}
       requestData = @onBeforeSend(requestData) if @onBeforeSend?
-      if JAFWConf.useWSAPI==1
+      if inSideConf.useWSAPI==1
          requestData.type='api'
-         requestData.seq=JAFW.__nextID()
+         requestData.seq=inSide.__nextID()
          success=(args)->
             if args.status==1
                fError?(args.data)
@@ -52,7 +52,7 @@ class API
          bus=getBus('wsbus')
          bus.apiRequest2(requestData, success, fError)
       else
-         requestData = JAFW.Url.encode requestData
+         requestData = inSide.Url.encode requestData
          @_sendRequest(requestData, fSuccess, fError)
    # Цепочечный вызов API-функций. Вызовы происходят в порядке следования в oRequests
    # oRequests - массив вида [[sName,sSignature,[oArgs1,oArgs2,..]],..]. Каждый массив в массиве oRequests задает
@@ -67,6 +67,6 @@ class API
          requests = requests.concat request[2].map (args)->{name: request[0], mod: module.join('.'), method: method, args: args}
       requestData={chain: 1, requests: requests}
       requestData = @onBeforeSend(requestData) if @onBeforeSend?
-      requestData = JAFW.Url.encode requestData
+      requestData = inSide.Url.encode requestData
       @_sendRequest(requestData, fSuccess, fError)
-JAFW.__Register('API', API)
+inSide.__Register('API', API)

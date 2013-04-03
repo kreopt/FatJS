@@ -1,7 +1,7 @@
 ##
 # SESSION
 ##
-class JAFW.Session
+class inSide.Session
     constructor:->
         for data,storageIndex of localStorage
            localStorage.removeItem(storageIndex) if storageIndex.indexOf('__TPL__')!=-1
