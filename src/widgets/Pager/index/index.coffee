@@ -1,4 +1,4 @@
-JAFW.Apps.std_Pager.HANDLER 'index',
+inSide.Apps.std_Pager.HANDLER 'index',
     preRender:(renderCallback,{@pageIndex,@navId,@itemCount,@itemsPerPage})->
         CONNECT 'RESET_PAGER','reset',@,@navId
         @render=renderCallback

@@ -1,5 +1,5 @@
 
-LIB_PATH=../../../../../lib/jafw/widgets/
+LIB_PATH=../../../../../lib/inSide/widgets/
 include ../local.mk
 include application.mk
 all: $(JS) $(CSS) $(HTML)

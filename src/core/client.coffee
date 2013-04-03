@@ -41,7 +41,7 @@ class AppEnvironment
                 a=@
                 body.__app__=appName
                 body.run=(selector,appSignature,args,onload)->
-                   JAFW.run(selector,appSignature,args,onload,@__id__)
+                   inSide.run(selector,appSignature,args,onload,@__id__)
                 body.put=(selector,blockName,args,onload)->
                   a.put.call(a,selector,blockName,args, @__id__,onload)
                 body.__destroy__=(calledByParent=false)->
@@ -121,17 +121,17 @@ class AppEnvironment
                       error=->success({responseText:''})
                       if not AppEnvironment::_styles[name]?
                          path=name.split(':').join('/')
-                         Ajax::get("""#{JAFWConf.app_dir}/#{path}.css""",'',success,error)
+                         Ajax::get("""#{inSideConf.app_dir}/#{path}.css""",'',success,error)
                       else
                          next()
                    loadTemplate=(name,next)=>
-                      if not JAFW.RenderEngine._tpl[name]?
+                      if not inSide.RenderEngine._tpl[name]?
                          success=(tpl)=>
-                            JAFW.RenderEngine.loadTemplate(name,tpl.responseText)
+                            inSide.RenderEngine.loadTemplate(name,tpl.responseText)
                             next()
                          error=()=>success({responseText:''})
                          path=name.split(':').join('/')
-                         Ajax::get("""#{JAFWConf.app_dir}/#{path}.jade""",'',success,error)
+                         Ajax::get("""#{inSideConf.app_dir}/#{path}.jade""",'',success,error)
                       else
                          next()
 
@@ -145,9 +145,9 @@ class AppEnvironment
                       for p of data
                          args[p] = data[p]
                       if handler.__container__
-                         args.config=JAFWConf
+                         args.config=inSideConf
                          styleName=appSignature
-                         view=JAFW.RenderEngine.render(appSignature,args)
+                         view=inSide.RenderEngine.render(appSignature,args)
 
                          #TODO: inheritance chain
                          if handler.__extends__?
@@ -155,7 +155,7 @@ class AppEnvironment
                             loadStyle styleName, =>
                                if view == ''
                                   loadTemplate handler.__extends__,=>
-                                     view=JAFW.RenderEngine.render(handler.__extends__,args)
+                                     view=inSide.RenderEngine.render(handler.__extends__,args)
                                      render(AppEnvironment::_styles[styleName],view)
                                      initApp(handler,args,onload)
                                else
@@ -167,7 +167,7 @@ class AppEnvironment
                       else
                          initApp(handler,args,onload)
 
-                   hid=JAFW.__nextID('inSideHandler')
+                   hid=inSide.__nextID('inSideHandler')
                    console.log(appSignature)
                    AppEnvironment::_running[hid]=new AppEnvironment::_registered[appName].handlers[blockName](selector)
                    AppEnvironment::_selectorHandlers[selector]=hid
@@ -178,6 +178,7 @@ class AppEnvironment
                    handler.__parent__=parentHid
                    handler.__children__=[]
                    handler.__container__=container
+                   handler.__args__=args
                    handler.__reload__= ((init,args)->->handler.preRender(init,args))(init,args)
 
 
@@ -208,7 +209,7 @@ class AppEnvironment
              onLoad(appName,blockName,selector,args)
           script = document.createElement("script");
           script.type = "text/javascript";
-          script.src="""#{JAFWConf.app_dir}/#{appName}/#{blockName}.js"""
+          script.src="""#{inSideConf.app_dir}/#{appName}/#{blockName}.js"""
           script.onerror=->
              AppEnvironment::_busy=false
           script.async=true
@@ -241,7 +242,7 @@ class Ajax
                 # Если не произошло ошибок на протокольном уровне, выполняем fSuccess, иначе fError
                 handler=if request.status==200 then fSuccess else fError
                 handler?(request)
-        requestData=JAFW.Url.encode oData
+        requestData=inSide.Url.encode oData
         # Если метод - GET, кладем данные с строку запроса
         if sMethod=='GET'
            if requestData
@@ -262,8 +263,8 @@ class Launcher
         CONNECT('LAUNCHER_REPLACE','repl',@)
         CONNECT('LAUNCHER_BACK','back',@)
         CONNECT('LAUNCHER_START','start',@)
-        @sel='#jafw_container'
-        @defaultSelector='#jafw_container'
+        @sel='#inSideContainer'
+        @defaultSelector='#inSideContainer'
         @defaultApp='Main:index'
         @currentView=null
         @storedStates={}
@@ -288,7 +289,7 @@ class Launcher
                     delete @storedStates[name]
             # сохраняем последнее состояние представления, если есть функция сохранения
             @storedStates[@currentView.__app__+':'+@currentView.__name__]=@currentView.__store__() if @currentView?.__store__?
-            JAFW.run(@sel,app,JAFW.Url.decode(args),storeCA)
+            inSide.run(@sel,app,inSide.Url.decode(args),storeCA)
         self.onpopstate=(e)=>
             @sel=e.state
     start:({app,selector,args,replaceByURL})->
@@ -306,25 +307,25 @@ class Launcher
              return if not hash[1]
              [app,args]=hash[1].substr(1).split('/')
              return if not app or app==@defaultApp
-             @repl({app,cont:@defaultContainer,args:JAFW.Url.decode(args)})
+             @repl({app,cont:@defaultContainer,args:inSide.Url.decode(args)})
        # сохраняем последнее состояние представления, если есть функция сохранения
-       self.history.pushState?(@defaultContainer,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#!/#{app}/#{JAFW.Url.encode(args)}")
-       JAFW.run(@defaultContainer,app,args,storeCA)
+       self.history.pushState?(@defaultContainer,(if @currentView?.__printable__? then @currentView.__printable__ else null),window.location.pathname+"#!/#{app}/#{inSide.Url.encode(args)}")
+       inSide.run(@defaultContainer,app,args,storeCA)
     back:->
         self.history.back()
     push:({cont,app,args})->
-        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#!/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),window.location.pathname+"#!/#{app}/#{inSide.Url.encode(args)}")
         @sel=cont
-        self.onhashchange({newURL:"/#!/#{app}/#{JAFW.Url.encode(args)}"})
+        self.onhashchange({newURL:window.location.pathname+"#!/#{app}/#{inSide.Url.encode(args)}"})
     repl:({cont,app,args})->
-        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),"/#!/#{app}/#{JAFW.Url.encode(args)}")
+        self.history.pushState?(cont,(if @currentView?.__printable__? then @currentView.__printable__ else null),window.location.pathname+"#!/#{app}/#{inSide.Url.encode(args)}")
         @sel=cont
-        self.onhashchange({newURL:"/#!/#{app}/#{JAFW.Url.encode(args)}"})
+        self.onhashchange({newURL:window.location.pathname+"#!/#{app}/#{inSide.Url.encode(args)}"})
 ##
 # Запуск блока приложения
 ##
 containerApps=null
-JAFW.run=(selector,appSignature,args,onload,parentId=null)->
+inSide.run=(selector,appSignature,args,onload,parentId=null)->
     [ns,name]=appSignature.split('::')
     [ns,name]=['',ns] if not name
     [appName,blockName]=name.split(':')
@@ -334,6 +335,6 @@ JAFW.run=(selector,appSignature,args,onload,parentId=null)->
        AppEnvironment::__Register(appAccess)
     AppEnvironment::_registered[appAccess].put(selector,blockName,args,parentId,onload)
 
-JAFW.__Register('Ajax',Ajax)
-JAFW.__Register('Apps',AppEnvironment)
-JAFW.__Register('Launcher',Launcher)
+inSide.__Register('Ajax',Ajax)
+inSide.__Register('Apps',AppEnvironment)
+inSide.__Register('Launcher',Launcher)

@@ -9,7 +9,7 @@ self.logDebug=()->
    console.debug.apply(console,args)
 DEBUG=0
 # COMMON
-class JAFWCore
+class inSideCore
     _uids:{
       '$':0
     }
@@ -19,18 +19,18 @@ class JAFWCore
     # Генератор уникальных в пределах сессии ID
     ##
     __nextID:(seqName='$')->
-       JAFWCore::_uids[seqName]=0 if not JAFWCore::_uids[seqName]
-       JAFWCore::_uids[seqName]++
+       inSideCore::_uids[seqName]=0 if not inSideCore::_uids[seqName]
+       inSideCore::_uids[seqName]++
     ##
     # Регистрация модулей
     ##
     __Register:(modName,module)->
-        if modName in JAFWCore::_mods
+        if modName in inSideCore::_mods
             throw('Module already registered')
 
-        JAFWCore::_mods[modName]=new module()
-        Object.defineProperty(JAFWCore::,modName,{
-            get:->JAFWCore::_mods[modName]
+        inSideCore::_mods[modName]=new module()
+        Object.defineProperty(inSideCore::,modName,{
+            get:->inSideCore::_mods[modName]
         })
 ##
 # РАБОТА С URL: кодирование/декодирование объектов в/из строки URL
@@ -171,7 +171,7 @@ self.CONNECT=(sSignal,sSlot,oReceiver,UID=null)->
     # Если sSlot - функция, генерируем UID и подписываем объект на анонимную функцию
     if (typeof sSlot == typeof(->))
         fSlot=sSlot
-        sSlot=JAFW.__nextID()
+        sSlot=inSide.__nextID()
     else
         throw "No such slot: #{sSlot}" if not oReceiver[sSlot]?
     addConnection(sSignal,sSlot,oReceiver,fSlot)
@@ -203,12 +203,12 @@ class SigHandler
     constructor:(@context,@sigName,@handler)->
     _deserialize:()->
 ###
-JAFWCore::__Register('Url',URL)
-#JAFWCore::__Register('Signal',Signal)
+inSideCore::__Register('Url',URL)
+#inSideCore::__Register('Signal',Signal)
 
 if not exports?
-    #JAFWCore::RenderEngine=new jSmart()
-    JAFWCore::RenderEngine={
+    #inSideCore::RenderEngine=new jSmart()
+    inSideCore::RenderEngine={
         _tpl:{}
         loadTemplate:(name,tpl)->
             try
@@ -224,7 +224,7 @@ if not exports?
                 throw e
     }
 
-self.JAFW=new JAFWCore()
+self.inSide=new inSideCore()
 # nodejs
 if exports?
-    exports.jafw=self.JAFW
+    exports.inSide=self.inSide
