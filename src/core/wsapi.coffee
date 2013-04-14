@@ -58,10 +58,10 @@ class self.WebSocketBus extends IBus
             #TODO: parseSender
             EMIT msg.signal,(if msg.data then msg.data else {}),msg.sender
          else if msg.type=='api'
+            @busy=false
             #EMIT '=WSAPI_REQUEST',{status:0,data:msg.data},msg.seq
             @rhandlers[Number(msg.seq)].success({status:0,data:msg.data})
             delete @rhandlers[Number(msg.seq)]
-            @busy=false
             if @queue.length
                req=@queue.shift()
                if req
@@ -69,10 +69,10 @@ class self.WebSocketBus extends IBus
          else if msg.type == 'error'
             EMIT 'ERROR', {body: msg.data}
             if msg.errtype=='api'
+               @busy=false
                #EMIT '=WSAPI_REQUEST',{status:1,data:msg.data},msg.seq
                @rhandlers[Number(msg.seq)].error?({status:1,data:msg.data})
                delete @rhandlers[Number(msg.seq)]
-               @busy=false
                if @queue.length
                   req=@queue.shift()
                   if req
