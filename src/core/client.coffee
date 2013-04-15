@@ -226,10 +226,16 @@ class AppEnvironment
 # АСИНХРОННАЯ ПЕРЕДАЧА ДАННЫХ
 ##
 class Ajax
-# Отправка GET-запроса на сервер
-# sUrl - URL, на который отправится запрос
-# oData - объект данных
-# fSuccess/fError - обработчики успешного/ошибочного запроса
+   __id__:'ajax'
+   constructor:->
+      CONNECT 'inSide.Ajax.post',(({url,data})=>@get(url,data)),@
+      CONNECT 'inSide.Ajax.get',(({url,data})=>@get(url,data)),@
+      CONNECT 'inSide.Ajax.request',(({method,url,data})=>@get(method,url,data)),@
+
+   # Отправка GET-запроса на сервер
+   # sUrl - URL, на который отправится запрос
+   # oData - объект данных
+   # fSuccess/fError - обработчики успешного/ошибочного запроса
    get :     (sUrl, oData, fSuccess, fError)->Ajax::request('GET', sUrl, oData, fSuccess, fError)
    # Отправка POST-запроса на сервер
    # sUrl - URL, на который отправится запрос
