@@ -1,21 +1,21 @@
 ##
 # SESSION
 ##
-class inSide.Session
-    constructor:->
-        for data,storageIndex of localStorage
-           localStorage.removeItem(storageIndex) if storageIndex.indexOf('__TPL__')!=-1
-    _storageName:(sParamName,sNamespace)->
-        'ns:'+(if sNamespace then sNamespace else 'global')+':'+sParamName
-    get:(sParameter,sNamespace)->
-        storageName=@_storageName(sParameter,sNamespace)
-        res=localStorage[storageName]
-        if res isnt null
-            res=if (res is "undefined" or res is undefined) then undefined else JSON.parse(res)
-        res
-    set:(sParameter,oValue,sNamespace)->
-        storageName=@_storageName(sParameter,sNamespace)
-        localStorage[storageName]=JSON.stringify(oValue)
-    remove:(sParameter,sNamespace)->
-        localStorage.removeItem(@_storageName(sParameter,sNamespace))
-    clear:->localStorage.clear()
+class JAFW.Session
+   constructor : (type = 'local', ns = 'global')->
+      @storage = if type == 'local' then localStorage else sessionStorage
+      @ns = ns
+   _storageName : (sParamName, sNamespace)->
+      (if sNamespace then sNamespace else @ns) + ':' + sParamName
+   get : (sParameter, sNamespace)->
+      storageName=@_storageName(sParameter, sNamespace)
+      res=@storage[storageName]
+      if res isnt null
+         res = if (res is "undefined" or res is undefined) then undefined else JSON.parse(res)
+      res
+   set : (sParameter, oValue, sNamespace)->
+      storageName=@_storageName(sParameter, sNamespace)
+      @storage[storageName] = JSON.stringify(oValue)
+   remove : (sParameter, sNamespace)->
+      @storage.removeItem(@_storageName(sParameter, sNamespace))
+   clear : ->@storage.clear()
