@@ -48,11 +48,11 @@ class AppEnvironment
             body.__destroy__ = (calledByParent = false)->
                console.log('Destroying ' + @__app__ + ':' + @__name__)
                # удаляем обработчик из списка потомков родителя
-               if @__parent__ and (not calledByParent) and AppEnvironment::_running[@__parent__]
-                  children=AppEnvironment::_running[@__parent__].__children__
+               if @__parent__ and (not calledByParent)
+                  children=@__parent__.__children__
                   for child,childIndex in children
                      if child.__id__ == @__id__
-                        AppEnvironment::_running[@__parent__].__children__.splice(childIndex, 1)
+                        @__parent__.__children__.splice(childIndex, 1)
                         break
                DISCONNECT('*', '*', @)
                # Пользовательский деструктор
@@ -180,7 +180,7 @@ class AppEnvironment
                handler.__name__ = blockName
                handler.__id__ = hid
                handler.__winId__ = 0 # main window
-               handler.__parent__ = parentHid
+               handler.__parent__ = AppEnvironment::_running[parentHid]
                handler.__children__ = []
                handler.__container__ = container
                handler.__disposable__ = disposable
