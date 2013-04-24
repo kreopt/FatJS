@@ -1,7 +1,7 @@
 ##
 # SESSION
 ##
-class JAFW.Session
+class inSide.Session
    constructor : (type = 'local', ns = 'global')->
       @storage = if type == 'local' then localStorage else sessionStorage
       @ns = ns
