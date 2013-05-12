@@ -129,3 +129,8 @@ self.EMIT_AND_WAIT = (oSender, sSignal, oArgs, sSlot)->
    validateSignal(sSignal)
    CONNECT('=' + sSignal, sSlot, oSender, oSender.__id__)
    EMIT(sSignal, oArgs, oSender, true)
+
+
+self.INIT_CONNECTIONS = (scope, oConnections)->
+   for signal, handler of oConnections
+      CONNECT(signal, handler, scope)

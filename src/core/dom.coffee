@@ -132,4 +132,22 @@ self.installDOMWrappers = (oHolder, DOMToplevelScope)->
       DOMNodes=DOMScope.querySelectorAll(sSelector)
       for node in DOMNodes
          node.parentNode.removeChild(node)
+   oHolder.setupEvents = (oEventListeners,DOMScope)->
+      scope = oHolder.$scope(DOMScope)
+      for selector, events of oEventListeners
+         if selector[0]=='$'
+            selector=selector.substr(1)
+            single=true
+         else if selector[0]=='#'
+            single=true
+         else
+            single=false
+         nodes=if single then [$s(selector, scope)] else nodes=$a(selector, scope)
+         for event, listeners of events
+            if typeof(listeners)==typeof(->)
+               oHolder.addEvents(nodes, event, listeners)
+            else
+               for listenerName, listener of listeners
+                  oHolder.addEvents(nodes, event, listener)
+
 installDOMWrappers(self, document)
