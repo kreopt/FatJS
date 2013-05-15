@@ -145,14 +145,14 @@ class AppEnvironment
                render=(style, view)->
                   handler.__container__.innerHTML = style + view
                   AppEnvironment::_dirty = true
-               init=(data)=>
+               init=(data, isReload=false)=>
                   for p of data
                      args[p] = data[p]
+                  _onload = if isReload then null else onload
                   if handler.__container__
                      args.config = inSideConf
                      styleName=appSignature
                      view=inSide.RenderEngine.render(appSignature, args)
-
                      #TODO: inheritance chain
                      if handler.__extends__?
                         styleName = handler.__extends__ if AppEnvironment::_styles[styleName] == ''
@@ -161,15 +161,15 @@ class AppEnvironment
                               loadTemplate handler.__extends__, =>
                                  view = inSide.RenderEngine.render(handler.__extends__, args)
                                  render(AppEnvironment::_styles[styleName], view)
-                                 initApp(handler, args, onload)
+                                 initApp(handler, args, _onload)
                            else
                               render(AppEnvironment::_styles[styleName], view)
-                              initApp(handler, args, onload)
+                              initApp(handler, args, _onload)
                      else
                         render(AppEnvironment::_styles[styleName], view)
-                        initApp(handler, args, onload)
+                        initApp(handler, args, _onload)
                   else
-                     initApp(handler, args, onload)
+                     initApp(handler, args, _onload)
 
                hid=inSide.__nextID('inSideHandler')
                console.log(appSignature)
@@ -185,7 +185,7 @@ class AppEnvironment
                handler.__container__ = container
                handler.__disposable__ = disposable
                handler.__args__ = args
-               handler.__reload__ = ((init, args)->->handler.preRender(init, args))(init, args)
+               handler.__reload__ = ((init, args)->->handler.preRender(((args)->init(args,true)), args))(init, args)
 
 
                handler.toString = ->@__app__ + ":" + @__name__
