@@ -68,6 +68,7 @@ class AppEnvironment
 
             body.kill = (selector)->AppEnvironment::kill(selector)
             body.preRender = ((r, args)->r(args)) if not body.preRender?
+            body.__oncreate__ = ((r, args)->r(args)) if not body.__oncreate__?
 
             AppEnvironment::_registered[appName].handlersProp[name] = body
             AppEnvironment::_registered[appName].handlers[name] = ->
@@ -200,7 +201,8 @@ class AppEnvironment
                      if AppEnvironment::_runQueue.length
                         nextargs=AppEnvironment::_runQueue.shift()
                         @run.apply(AppEnvironment::_registered[nextargs.shift()], nextargs)
-                     handler.preRender(init, args)
+                     handler.__oncreate__(((args)->handler.preRender(init, args)), args)
+
                return handler
 
       AppEnvironment::_registered[appName] = new App()
@@ -215,7 +217,7 @@ class AppEnvironment
             onLoad(appName, blockName, selector, args)
          script = document.createElement("script");
          script.type = "text/javascript";
-         script.src = """#{inSideConf.app_dir}/#{appName}/#{blockName}.js"""
+         script.src = """#{inSideConf.app_dir}/#{appName}/#{blockName}.js?#{if inSide.DEBUG then Math.random() else ''}"""
          script.onerror = ->
             AppEnvironment::_busy = false
          script.async = true

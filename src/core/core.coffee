@@ -5,7 +5,9 @@ else if window?
 self.logDebug=()->
    d=new Date()
    ms=d.getMilliseconds()
-   args=['['+d.toLocaleTimeString()+'.'+ms+']'].concat(arguments)
+   args=['['+d.toLocaleTimeString()+'.'+ms+']']
+   for arg in arguments
+     args.push(arg)
    console.debug.apply(console,args)
 DEBUG=0
 # COMMON
