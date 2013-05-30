@@ -118,7 +118,8 @@ self.installDOMWrappers = (oHolder, DOMToplevelScope)->
       event.dataTransfer.effectAllowed = sEffect
       event.dataTransfer.dropEffect = sEffect
    oHolder.addEvents = (DOMNodes, sEventName, fCallback)->
-      node.addEventListener(sEventName, fCallback, false) for node in DOMNodes
+      holder=if @ then @ else window
+      node.addEventListener(sEventName, ((e)->fCallback.call(@,e,holder)), false) for node in DOMNodes
    oHolder.addEventBySelector = (sSelector, DOMScope, sEventName, fCallback)->
       if arguments.length < 4
          fCallback = sEventName

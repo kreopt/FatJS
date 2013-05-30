@@ -2,6 +2,8 @@
 ##
 # Среда запуска приложений
 ##
+debugRnd=->
+   return if inSide.DEBUG then Math.round(Math.random()*100) else ''
 #TODO: Избавиться от избыточности, вводимой различием классов AppEnvironment и App
 class AppEnvironment
    _styles :         {}
@@ -67,8 +69,9 @@ class AppEnvironment
                delete AppEnvironment::_running[@__id__]
 
             body.kill = (selector)->AppEnvironment::kill(selector)
-            body.preRender = ((r, args)->r(args)) if not body.preRender?
             body.__oncreate__ = ((r, args)->r(args)) if not body.__oncreate__?
+            body.__onrender__ = ((r, args)->r(args)) if not body.__onrender__?
+            body.__init__ = body.init
 
             AppEnvironment::_registered[appName].handlersProp[name] = body
             AppEnvironment::_registered[appName].handlers[name] = ->
@@ -126,7 +129,7 @@ class AppEnvironment
                   error=->success({responseText : ''})
                   if not AppEnvironment::_styles[name]?
                      path=name.split(':').join('/')
-                     Ajax::get("""#{inSideConf.app_dir}/#{path}.css""", '', success, error)
+                     Ajax::get("""#{inSideConf.app_dir}/#{path}.css?#{debugRnd()}""", '', success, error)
                   else
                      next()
                loadTemplate=(name, next)=>
@@ -136,12 +139,15 @@ class AppEnvironment
                         next()
                      error=()=>success({responseText : ''})
                      path=name.split(':').join('/')
-                     Ajax::get("""#{inSideConf.app_dir}/#{path}.jade""", '', success, error)
+                     Ajax::get("""#{inSideConf.app_dir}/#{path}.jade?#{debugRnd()}""", '', success, error)
                   else
                      next()
 
                initApp=(handler, args, onload)->
-                  handler.init(handler.__container__, args)
+                  if handler.__events__
+                     handler.setupEvents(handler.__events__)
+                  if handler.__init__
+                     handler.__init__(handler.__container__, args)
                   onload?(handler)
                render=(style, view)->
                   handler.__container__.innerHTML = style + view
@@ -186,7 +192,7 @@ class AppEnvironment
                handler.__container__ = container
                handler.__disposable__ = disposable
                handler.__args__ = args
-               handler.__reload__ = ((init, args)->->handler.preRender(((args)->init(args,true)), args))(init, args)
+               handler.__reload__ = ((init, args)->->handler.__onrender__(((args)->init(args,true)), args))(init, args)
 
 
                handler.toString = ->@__app__ + ":" + @__name__
@@ -201,7 +207,9 @@ class AppEnvironment
                      if AppEnvironment::_runQueue.length
                         nextargs=AppEnvironment::_runQueue.shift()
                         @run.apply(AppEnvironment::_registered[nextargs.shift()], nextargs)
-                     handler.__oncreate__(((args)->handler.preRender(init, args)), args)
+                     if handler.__connections__
+                        INIT_CONNECTIONS(handler,handler.__connections__)
+                     handler.__oncreate__(((args)->handler.__onrender__(init, args)), args)
 
                return handler
 
@@ -217,7 +225,7 @@ class AppEnvironment
             onLoad(appName, blockName, selector, args)
          script = document.createElement("script");
          script.type = "text/javascript";
-         script.src = """#{inSideConf.app_dir}/#{appName}/#{blockName}.js?#{if inSide.DEBUG then Math.random() else ''}"""
+         script.src = """#{inSideConf.app_dir}/#{appName}/#{blockName}.js?#{debugRnd()}"""
          script.onerror = ->
             AppEnvironment::_busy = false
          script.async = true

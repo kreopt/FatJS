@@ -34,6 +34,14 @@ class inSideCore
         Object.defineProperty(inSideCore::,modName,{
             get:->inSideCore::_mods[modName]
         })
+
+class Task
+   create:(workerFunc, callback)->
+      worker = new Worker(window.URL.createObjectURL(new Blob(['('+workerFunc.toString()+')()'], { "type" : "text\/javascript" })))
+      worker.onmessage = (event)->
+         callback(event.data)
+      return worker
+
 ##
 # РАБОТА С URL: кодирование/декодирование объектов в/из строки URL
 ##
@@ -205,6 +213,7 @@ class SigHandler
     constructor:(@context,@sigName,@handler)->
     _deserialize:()->
 ###
+inSideCore::__Register('Task',Task)
 inSideCore::__Register('Url',URL)
 #inSideCore::__Register('Signal',Signal)
 
