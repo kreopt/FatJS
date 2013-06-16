@@ -3,7 +3,7 @@
 # Среда запуска приложений
 ##
 debugRnd=->
-   return if inSide.DEBUG then Math.round(Math.random()*100) else ''
+   return if window.inSideConf?.debug then Math.round(Math.random()*100) else ''
 #TODO: Избавиться от избыточности, вводимой различием классов AppEnvironment и App
 class AppEnvironment
    _styles :         {}

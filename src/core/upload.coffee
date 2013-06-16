@@ -10,7 +10,7 @@ class Upload
             formData.append(file.name, file);
         xhr = new XMLHttpRequest();
         xhr.open('POST', url, true);
-        xhr.onload = =>EMIT '=UPLOAD_FILES',{},emitter
+        xhr.onload = (e)->EMIT('=UPLOAD_FILES',this.responseText,emitter)
         xhr.send(formData)
         return null
 inSide.__Register('Uploader',Upload)
