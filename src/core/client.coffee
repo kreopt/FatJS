@@ -112,8 +112,7 @@ class AppEnvironment
             AppEnvironment::_busy = true
             AppEnvironment::startView @__name__, blockName, args, selector, (appName, blockName, selector, args)=>
                appSignature=appName + ':' + blockName
-               args =
-               {} if not args
+               args = {} if not args
 
                if typeof(selector) == typeof({})
                   container=selector

@@ -113,6 +113,59 @@ self.installDOMWrappers = (oHolder, DOMToplevelScope)->
    oHolder.insertAfter = (DOMNode, sHtml)->DOMNode.insertAdjacentHTML('afterend', sHtml)
    oHolder.insertBefore = (DOMNode, sHtml)->DOMNode.insertAdjacentHTML('beforebegin', sHtml)
 
+
+
+   getRealDisplay=(elem)->
+      if (elem.currentStyle)
+         return elem.currentStyle.display
+      else
+         if (window.getComputedStyle)
+            computedStyle = window.getComputedStyle(elem, null )
+            return computedStyle.getPropertyValue('display')
+
+   displayCache = {}
+
+   isHidden=(el)->
+      width = el.offsetWidth
+      height = el.offsetHeight
+      tr = el.nodeName.toLowerCase() == "tr"
+
+      return if (width == 0 && height == 0 && !tr) then true else (if width > 0 && height > 0 && !tr then false else getRealDisplay(el))
+
+   oHolder.$toggle=(el)->
+      if isHidden(el) then show(el) else hide(el)
+
+   oHolder.$hide = (DOMNode)->
+      if !DOMNode.getAttribute('displayOld')
+         DOMNode.setAttribute("displayOld", DOMNode.style.display)
+      DOMNode.style.display = "none"
+
+   oHolder.$show = (DOMNode)->
+      return if (getRealDisplay(DOMNode) != 'none')
+
+      old = DOMNode.getAttribute("displayOld");
+      DOMNode.style.display = old || "";
+
+      if ( getRealDisplay(DOMNode) == "none" )
+         nodeName = DOMNode.nodeName
+         body = document.body
+
+         if ( displayCache[nodeName] )
+            display = displayCache[nodeName]
+         else
+            testElem = document.createElement(nodeName)
+            body.appendChild(testElem)
+            display = getRealDisplay(testElem)
+
+            if (display == "none" )
+               display = "block"
+
+            body.removeChild(testElem)
+            displayCache[nodeName] = display
+
+         DOMNode.setAttribute('displayOld', display)
+         DOMNode.style.display = display
+
    oHolder.dragSetup = (event, oData, sEffect)->
       event.dataTransfer.setData('text/plain', JSON.stringify(oData))
       event.dataTransfer.effectAllowed = sEffect
