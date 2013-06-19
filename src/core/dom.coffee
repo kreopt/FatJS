@@ -11,13 +11,13 @@ if not Element.prototype.hasOwnProperty('classList')
             classList=String(a.className).split(' ')
             if not a.classList.contains(className)
                classList.push(className)
-               a.className = classList.join('')
+               a.className = classList.join(' ')
          remove : (className)->
             classList=String(a.className).split(' ')
             classIndex=a.classList.contains(className)
             if classIndex
                classList.splice(classIndex - 1, 1)
-               a.className = classList.join('')
+               a.className = classList.join(' ')
          toggle : (className)->
             classList=String(a.className).split(' ') - 1
             classIndex=classList.indexOf(className)
@@ -25,7 +25,7 @@ if not Element.prototype.hasOwnProperty('classList')
                classList.splice(classIndex, 1)
             else
                classList.push(className)
-            a.className = classList.join('')
+            a.className = classList.join(' ')
          }
    })
 

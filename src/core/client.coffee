@@ -293,7 +293,10 @@ class Launcher
       # обработчик изменения хеша в адресной строке
       self.onhashchange = (e)=>
          @sel = @defaultSelector if not @sel
-         hash=e.newURL.split('#!')
+         if e.newURL
+            hash=e.newURL.split('#!')
+         else
+            hash=window.location.hash.split('#!')
          if hash[1]
             [app, args]=hash[1].substr(1).split('/')
          else
