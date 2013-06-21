@@ -91,7 +91,7 @@ class Window
       a=@
       $s('.CloseWindow', overlay).onclick = ->a.close($d(@parentNode.parentNode, 'id'))
       args.__winId__ = id
-      inSide.run($s('.Content', overlay), app, args, ((h)->
+      inSide.run(app, $s('.Content', overlay), args, ((h)->
          h.__winId__=id
          Window::windows[id] = h
          $s('body').appendChild(overlay)
