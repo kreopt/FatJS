@@ -1,2 +1,2 @@
 all:
-	$(COFFEE) -o ../../lib/inSide/core/ -c ./src/core/
+	$(COFFEE) -o ../../$(STATIC_PATH)/inSide/core/ -c ./src/core/
