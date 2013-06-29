@@ -207,11 +207,13 @@ class Ajax
    # oData - объект данных
    # fSuccess/fError - обработчики успешного/ошибочного запроса
    get :     (sUrl, oData, fSuccess, fError)->Ajax::request('GET', sUrl, oData, fSuccess, fError)
+   getJSON: (sUrl, oData, fSuccess, fError)->Ajax::get(sUrl, oData, ((r)->fSuccess(JSON.parse(r.responseText))), fError)
    # Отправка POST-запроса на сервер
    # sUrl - URL, на который отправится запрос
    # oData - объект данных
    # fSuccess/fError - обработчики успешного/ошибочного запроса
    post :    (sUrl, oData, fSuccess, fError)->Ajax::request('POST', sUrl, oData, fSuccess, fError)
+   postJSON: (sUrl, oData, fSuccess, fError)->Ajax::post(sUrl, oData, ((r)->fSuccess(JSON.parse(r.responseText))), fError)
    # Отправка запроса на сервер
    # sMethod - тип запроса (GET/POST)
    # sUrl - URL, на который отправится запрос
