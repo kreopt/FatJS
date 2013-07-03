@@ -223,7 +223,7 @@ if not exports?
         _tpl:{}
         loadTemplate:(name,tpl)->
             try
-                @_tpl[name]=jade.compile(tpl,{compileDebug:true})
+                @_tpl[name]=jade.compile(tpl,{compileDebug:false})
             catch e
                 console.error('Failed to compile template: '+name)
                 throw e

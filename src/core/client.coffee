@@ -244,17 +244,16 @@ class Launcher
    toString : ->'appLauncher'
    constructor : ()->
       CONNECT('LAUNCHER_PUSH', 'push', @)
-      CONNECT('LAUNCHER_REPLACE', 'repl', @)
+      CONNECT('LAUNCHER_REPLACE', 'push', @)
       CONNECT('LAUNCHER_BACK', 'back', @)
       CONNECT('LAUNCHER_START', 'start', @)
-      @sel = '#inSideContainer'
-      @defaultSelector = '#inSideContainer'
+      @defaultContainer = '#inSideContainer'
       @defaultApp = 'Main:index'
+      @layout = 'Main:layout'
       @currentView = null
       @storedStates = {}
       # обработчик изменения хеша в адресной строке
       self.onhashchange = (e)=>
-         @sel = @defaultSelector if not @sel
          if e.newURL
             hash=e.newURL.split('#!')
          else
@@ -267,50 +266,35 @@ class Launcher
             app=@defaultApp
             args=""
          EMIT 'inSide.launcher.hashChange', {app}
-         AppEnvironment::_kill(@sel)
-         storeCA= (a)=>
-            @currentView = a
-            # Восстанавливаем последнее состояние представления
-            name=a.__name__
-            if @storedStates[name]?
-               @currentView?.__restore__?(@storedStates[name])
-               delete @storedStates[name]
-         # сохраняем последнее состояние представления, если есть функция сохранения
-         @storedStates[@currentView.__name__] = @currentView.__store__() if @currentView?.__store__?
-         inSide.run(app, @sel, inSide.Url.decode(args), storeCA)
-      self.onpopstate = (e)=>
-         @sel = e.state
-   start :       ({app,selector,args,replaceByURL})->
+         AppEnvironment::_kill(@defaultContainer)
+         inSide.run(app, @defaultContainer, inSide.Url.decode(args))
+
+   start :       ({layout,app,selector,args})->
       args={} if not args
-      replaceByURL=true if not replaceByURL?
+      @layout=layout
       @defaultApp = app
       @defaultContainer = selector
-      AppEnvironment::_kill(selector)
-      storeCA= (a)=>
-         @currentView = a
-         # загружаем приложение, указанное в адресной строке
-         if replaceByURL
-            hash=window.location.hash.split('#!')
-            return if not hash[1]
+      inSide.run layout, '#inSideContainer', args, =>
+         hash=window.location.hash.split('#!')
+         if not hash[1]
+            app = @defaultApp
+            args=''
+         else
             [app, args]=hash[1].substr(1).split('/')
-            return if not app or app == @defaultApp
-            @repl({app, cont : @defaultContainer, args : inSide.Url.decode(args)})
-      # сохраняем последнее состояние представления, если есть функция сохранения
-      self.history.pushState?(@defaultContainer,
-         (if @currentView?.__printable__? then @currentView.__printable__ else null),
-         window.location.pathname + "#!/#{app}/#{inSide.Url.encode(args)}")
-      inSide.run(app, @defaultContainer, args, storeCA)
-   back : ->
-      self.history.back()
+            if not app
+               app = @defaultApp
+               args=''
+         self.onhashchange({newURL : window.location.pathname + "#!/#{app}/#{args}"})
+
+   back : ({defaultApp, defaultArgs})->
+      if self.history.state
+         self.history.back()
+      else
+         @push({app:defaultApp, cont:@defaultContainer, args:defaultArgs})
+
    push :        ({cont,app,args})->
       self.history.pushState?(cont, (if @currentView?.__printable__? then @currentView.__printable__ else null),
          window.location.pathname + "#!/#{app}/#{inSide.Url.encode(args)}")
-      @sel = cont
-      self.onhashchange({newURL : window.location.pathname + "#!/#{app}/#{inSide.Url.encode(args)}"})
-   repl :        ({cont,app,args})->
-      self.history.pushState?(cont, (if @currentView?.__printable__? then @currentView.__printable__ else null),
-         window.location.pathname + "#!/#{app}/#{inSide.Url.encode(args)}")
-      @sel = cont
       self.onhashchange({newURL : window.location.pathname + "#!/#{app}/#{inSide.Url.encode(args)}"})
 ##
 # Запуск блока приложения
