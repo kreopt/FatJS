@@ -1,34 +1,4 @@
 'use strict';
-# COMPATIBILITY
-if not Element.prototype.hasOwnProperty('classList')
-   Object.defineProperty(Element.prototype, 'classList', {
-      get : ->
-         a=@
-         return {
-         contains : (className)->
-            String(a.className).split(' ').indexOf(className) + 1
-         add : (className)->
-            classList=String(a.className).split(' ')
-            if not a.classList.contains(className)
-               classList.push(className)
-               a.className = classList.join(' ')
-         remove : (className)->
-            classList=String(a.className).split(' ')
-            classIndex=a.classList.contains(className)
-            if classIndex
-               classList.splice(classIndex - 1, 1)
-               a.className = classList.join(' ')
-         toggle : (className)->
-            classList=String(a.className).split(' ') - 1
-            classIndex=classList.indexOf(className)
-            if classIndex
-               classList.splice(classIndex, 1)
-            else
-               classList.push(className)
-            a.className = classList.join(' ')
-         }
-   })
-
 self.installDOMWrappers = (oHolder, DOMToplevelScope)->
    oHolder.$scope = ((DOMToplevelScope)->(DOMScope)->if DOMScope? then DOMScope else DOMToplevelScope)(DOMToplevelScope)
 

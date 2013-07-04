@@ -8,7 +8,8 @@ self.logDebug=()->
    args=['['+d.toLocaleTimeString()+'.'+ms+']']
    for arg in arguments
      args.push(arg)
-   console.debug.apply(console,args)
+   if console?.debug?
+      console.debug.apply(console,args)
 DEBUG=0
 # COMMON
 class inSideCore
@@ -31,9 +32,12 @@ class inSideCore
             throw('Module already registered')
 
         inSideCore::_mods[modName]=new module()
-        Object.defineProperty(inSideCore::,modName,{
-            get:->inSideCore::_mods[modName]
-        })
+#        if Object.defineProperty
+#           Object.defineProperty(inSideCore::,modName,{
+#               get:->inSideCore::_mods[modName]
+#           })
+#        else
+        inSideCore::[modName]=inSideCore::_mods[modName]
 
 class Task
    create:(workerFunc, callback)->
@@ -225,13 +229,13 @@ if not exports?
             try
                 @_tpl[name]=jade.compile(tpl,{compileDebug:false})
             catch e
-                console.error('Failed to compile template: '+name)
+                logDebug('Failed to compile template: '+name)
                 throw e
         render:(name,args={})->
             try
                 @_tpl[name](args)
             catch e
-                console.error('Failed to render template: '+name)
+                logDebug('Failed to render template: '+name)
                 throw e
     }
 

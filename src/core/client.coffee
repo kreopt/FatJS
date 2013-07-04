@@ -32,30 +32,6 @@ class AppEnvironment
          AppEnvironment::_dirty = false
 
 
-   _loadStyle:(name, next)=>
-      success=(req)=>
-         AppEnvironment::_styles[name] = if req.responseText.replace(new RegExp("\\s"),'') != '' then """<style scoped="scoped">#{req.responseText}</style>""" else ""
-         next()
-      error=->success({responseText : ''})
-      if not AppEnvironment::_styles[name]?
-         path=name.split(':').join('/')
-         Ajax::get("""#{inSideConf.app_dir}/#{path}.css?#{debugRnd()}""", '', success, error)
-      else
-         next()
-
-
-   _loadTemplate:(name, next)=>
-      if not inSide.RenderEngine._tpl[name]?
-         success=(tpl)=>
-            inSide.RenderEngine.loadTemplate(name, tpl.responseText)
-            next()
-         error=()=>success({responseText : ''})
-         path=name.split(':').join('/')
-         Ajax::get("""#{inSideConf.app_dir}/#{path}.jade?#{debugRnd()}""", '', success, error)
-      else
-         next()
-
-
    _load : (appName, selector, args, onLoad)->
       if AppEnvironment::_registered[appName]?
          onLoad(appName, selector, args)
@@ -63,11 +39,11 @@ class AppEnvironment
          AppEnvironment::_initializers[appName] = (appName)-> onLoad(appName, selector, args)
          script = document.createElement("script");
          script.type = "text/javascript";
-         script.src = """#{inSideConf.app_dir}/#{appName.split(':').join('/')}.js?#{debugRnd()}"""
+         script.src = """#{inSideConf.app_dir}/#{appName.split(':').join('/')}.jsb.js?#{debugRnd()}"""
          script.onerror = ->
             AppEnvironment::_busy = false
          script.async = true
-         document.head.appendChild(script)
+         document.getElementsByTagName('head')[0].appendChild(script)
 
 
    _setupClass:(body)->
@@ -123,7 +99,7 @@ class AppEnvironment
       instance.__disposable__ = disposable
       instance.__args__ = args
 
-      instance.toString = ->@__app__ + ":" + @__name__
+      instance.toString = -> @__name__
       if parentId of AppEnvironment::_running
          AppEnvironment::_running[parentId].__children__.push(instance)
 
@@ -131,15 +107,9 @@ class AppEnvironment
          if instance.__container__
             installDOMWrappers(instance, container)
 
-            style=AppEnvironment::_styles[instance.__name__]
-            view = inSide.RenderEngine.render(instance.__name__, args)
-
-            if instance.__extends__?
-               if view == ''
-                  view = inSide.RenderEngine.render(instance.__extends__, args)
-               if style == ''
-                  style = AppEnvironment::_styles[instance.__extends__]
-            instance.__container__.innerHTML = style + view
+            if instance.__template__
+               style=if instance.__style__? then instance.__style__ else ''
+               instance.__container__.innerHTML = style + instance.__template__(args, jade)
             AppEnvironment::_dirty = true
             if instance.__events__
                instance.setupEvents(instance.__events__)
@@ -155,41 +125,39 @@ class AppEnvironment
       instance.__oncreate__(((args)->instance.__onrender__(init, args)), args)
 
    register:(appName, body)->
+      logDebug(appName)
       if appName in AppEnvironment::_registered
          throw('Application already registered')
-      AppEnvironment::_loadStyle appName, ->
-         AppEnvironment::_loadTemplate appName, ->
-            body.__name__=appName
-            AppEnvironment::_setupClass(body)
+      AppEnvironment::_setupClass(body)
 
-            AppEnvironment::_registered[appName] = {
-               body: body,
-               constructor: (bindObject)->
-                  bindObject = @ if not bindObject
-                  body = AppEnvironment::_registered[appName].body
-                  for property, value of body
-                     @[property] = if typeof(value) == typeof(->) then value.bind(bindObject) else value
-                  if body.__extends__
-                     @__super__ = new AppEnvironment::_registered[body.__extends__].constructor(@)
-                  return undefined
-               run:(selector = null, args = {}, parentId = null, onload = null)->
-                  AppEnvironment::_garbageCollect(@)
-                  AppEnvironment::_setupInstance(new AppEnvironment::_registered[appName].constructor(), selector, args, parentId, onload)
-                  AppEnvironment::_busy = false
-                  if AppEnvironment::_runQueue.length
-                     nextargs=AppEnvironment::_runQueue.shift()
-                     inSide.run.apply(AppEnvironment::_registered[nextargs[0]], nextargs)
-            }
+      AppEnvironment::_registered[appName] = {
+         body: body,
+         constructor: (bindObject)->
+            bindObject = @ if not bindObject
+            body = AppEnvironment::_registered[appName].body
+            for property, value of body
+               @[property] = if typeof(value) == typeof(->) then value.bind(bindObject) else value
+            if body.__extends__
+               @__super__ = new AppEnvironment::_registered[body.__extends__].constructor(@)
+            return undefined
+         run:(selector = null, args = {}, parentId = null, onload = null)->
+            AppEnvironment::_garbageCollect(@)
+            AppEnvironment::_setupInstance(new AppEnvironment::_registered[appName].constructor(), selector, args, parentId, onload)
+            AppEnvironment::_busy = false
+            if AppEnvironment::_runQueue.length
+               nextargs=AppEnvironment::_runQueue.shift()
+               inSide.run.apply(AppEnvironment::_registered[nextargs[0]], nextargs)
+      }
 
-            if body.__extends__?
-               AppEnvironment::_load(body.__extends__, null, {}, =>
-                  extendable=AppEnvironment::_registered[appName].body
-                  for property,value of AppEnvironment::_registered[body.__extends__].body
-                     extendable[property] = value if not extendable[property]?
-                  AppEnvironment::_initializers[appName]?(appName)
-               )
-            else
-               AppEnvironment::_initializers[appName]?(appName)
+      if body.__extends__?
+         AppEnvironment::_load(body.__extends__, null, {}, =>
+            extendable=AppEnvironment::_registered[appName].body
+            for property,value of AppEnvironment::_registered[body.__extends__].body
+               extendable[property] = value if not extendable[property]?
+            AppEnvironment::_initializers[appName]?(appName)
+         )
+      else
+         AppEnvironment::_initializers[appName]?(appName)
 
 
 ##
