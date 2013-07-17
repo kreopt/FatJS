@@ -252,6 +252,7 @@ class Launcher
             if not app
                app = @defaultApp
                args=''
+         return if app == null
          self.onhashchange({newURL : window.location.pathname + "#!/#{app}/#{args}"})
 
    back : ({defaultApp, defaultArgs})->
