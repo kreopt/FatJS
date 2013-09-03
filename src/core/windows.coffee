@@ -1,16 +1,13 @@
 class Notifier
-   success : ({head,body})->inSide.Notifier.show(head, body, 'Success')
-   alert : ({head,body})->inSide.Notifier.show(head, body, 'Alert', 0)
-   banner : ({head,body})->inSide.Notifier.show(head, body, 'Banner')
-   error : ({body})->inSide.Notifier.show('Ошибка', body, 'Error')
-   notify : ({head,body})->inSide.Notifier.show(head, body, 'Notify')
-   show : (sHead, sBody, sType = 'Notify', iTimeout = 5000)->
+   success : ({head,body})->inSide.Notifier.show(head, body, 'success')
+   error : ({body})->inSide.Notifier.show('Ошибка', body, 'danger')
+   notify : ({head,body})->inSide.Notifier.show(head, body, 'info')
+   show : (sHead, sBody, sType = 'info', iTimeout = 5000)->
+      sHead='' if not sHead
       notify=$c('div')
-      sHead = '' if not sHead
-      #TODO: сделать более гибким не прибегая к шаблонам
-      notify.innerHTML = """<div class="NotifyHead">#{sHead}</div><div class="NotifyText">#{sBody}</div>""";
-      notify.className = 'Notify Notify_' + sType;
-      notifications=$a('.Notify_' + sType);
+      notify.className="Notify alert alert-#{sType}"
+      notify.innerHTML = """<strong>#{sHead}</strong> #{sBody}""";
+      notifications=$a('.Notify' );
       height=0;
       for notification in notifications
          height += notification.clientHeight + 12 + 3;
@@ -22,11 +19,15 @@ class Notifier
          notify.onclick = =>@hide(notify, sType)
    hide : (DOMNotify, sType)->
       oldHeight=DOMNotify.clientHeight + 12 + 3;
-      DOMNotify.parentNode?.removeChild(DOMNotify)
-      notifications=$a('.Notify_' + sType)
-      if (notifications.length > 0)
-         for ntf in notifications
-            ntf.style.top = ntf.offsetTop - oldHeight + 'px';
+      $(DOMNotify).fadeOut(500)
+      setTimeout(((DOMNotify)->->
+         $(DOMNotify).remove()
+         notifications=$a('.Notify' )
+         if (notifications.length > 0)
+            for ntf in notifications
+               ntf.style.top = ntf.offsetTop - oldHeight + 'px';
+      )(DOMNotify), 500)
+
 inSide.__Register('Notifier', Notifier)
 ##
 # LOAD INDICATOR
@@ -62,44 +63,44 @@ class Window
       options={} if not options
       id=inSide.__nextID()
       overlay=$c('div')
-      overlay.className = 'Overlay'
-      overlay.setAttribute('data-id', id)
-      overlay.style.height = window.innerHeight + 'px'
-      overlay.style.width = window.innerWidth + 'px'
-      overlay.style.position = 'fixed'
-      overlay.style.top = '0px'
-      overlay.style.left = '0px'
-      overlay.style.background = 'rgba(0,0,0,0.5)'
-      overlay.style.overflow = 'auto'
-      overlay.style.zIndex = '9999'
-      overlay.style.textAlign = 'center'
+      overlay.className = """modal fade #{cls} WMOverlay"""
+      overlay.id='WMModal'
+      $attr(overlay,'role','dialog')
+      $attr(overlay,'aria-hidden','true')
+      $d(overlay,'id',id)
 
-      resize=->
-         overlay.style.height = window.innerHeight + 'px'
-         overlay.style.width = window.innerWidth + 'px'
-      window.addEventListener('resize', resize, false)
+      dialog="""
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+      """ +
+      (if options.noclose then "" else """<button type="button" class="close" data-dismiss="modal" data-id="#{id}" aria-hidden="true">&times;</button>""") +
+      """
+              <h4 class="modal-title">#{title}</h4>
+            </div>
+            <div class="modal-body WMContent">
+            </div>
+          </div><!-- /.modal-content -->
+        </div><!-- /.modal-dialog -->
+      """
 
-      if options.noclose
-         close=''
-      else
-         close="""<img class="CloseWindow" style="float: right;cursor:pointer" class="point" height="16" src="#{inSideConf.img_dir}/Icons/cross.svg"/>"""
-      overlay.innerHTML = """<div class="WINDOW #{cls}" id="WIN_#{id}" data-id="#{id}" draggable="true" style="text-align: left;display:inline-block">
-                          <header class="WindowHead"><span style="padding-left: 20px;font-weight: bold">#{title}</span>
-                          #{close}
-                          </header><section class="Content"></section></div>
-                          """
+      overlay.innerHTML = dialog
       a=@
-      $s('.CloseWindow', overlay).onclick = ->a.close($d(@parentNode.parentNode, 'id'))
+      $s('.CloseWindow', overlay).onclick = ->a.close($d(@, 'id'))
       args.__winId__ = id
-      inSide.run(app, $s('.Content', overlay), args, ((h)->
+      inSide.run(app, $s('.WMContent', overlay), args, ((h)->
          h.__winId__=id
          Window::windows[id] = h
          $s('body').appendChild(overlay)
+         $(overlay).modal('show')
+         $(overlay).on 'hidden.bs.modal', ->
+            $(this).remove()
       ))
       return id
    _close:({id})->@close(id)
    close : (sWindowId)->
       Window::windows[Number(sWindowId)].__destroy__()
       delete Window::windows[Number(sWindowId)]
-      removeNodesBySelector """.Overlay[data-id="#{sWindowId}"]"""
+      removeClass($s('body'), 'modal-open')
+      $('#WMModal').modal('hide')
 inSide.__Register('WinMan', Window)
