@@ -234,9 +234,10 @@ class Launcher
          else
             app=@defaultApp
             args=""
-         EMIT 'inSide.launcher.hashChange', {app}
          AppEnvironment::_kill(@defaultContainer)
-         inSide.run(app, @defaultContainer, inSide.Url.decode(args))
+         if app
+            EMIT 'inSide.launcher.hashChange', {app}
+            inSide.run(app, @defaultContainer, inSide.Url.decode(args))
 
    start :       ({layout,app,selector,args})->
       args={} if not args
