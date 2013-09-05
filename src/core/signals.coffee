@@ -53,7 +53,7 @@ removeConnection = (sSignal, sSlot, oReceiver)->
          delete __connectionTable[sig][objectName] if __connectionTable[sig] ? [objectName]?
       return
 
-   if __connectionTable[sSignal] ? [objectName]?.slots[sSlot]
+   if __connectionTable[sSignal]?[objectName]?.slots?[sSlot]
       delete __connectionTable[sSignal][objectName].slots[sSlot]
    else
       return

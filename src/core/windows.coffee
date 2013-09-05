@@ -46,7 +46,7 @@ class LoadIndicator
          overlay.id = 'Overlay'
          indicator=document.createElement('div')
          indicator.id = 'LoadIndicator'
-         indicator.innerHTML = LoadIndicator::loadMessage
+         indicator.innerHTML = @loadMessage
          overlay.appendChild(indicator)
          LoadIndicator::indicator = overlay
       document.body.appendChild(LoadIndicator::indicator)
