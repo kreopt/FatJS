@@ -216,6 +216,8 @@ class Launcher
       CONNECT('LAUNCHER_REPLACE', 'push', @)
       CONNECT('LAUNCHER_BACK', 'back', @)
       CONNECT('LAUNCHER_START', 'start', @)
+      CONNECT('LAUNCHER_CLEAR', 'clear', @)
+      CONNECT('LAUNCHER_SET_ARG', 'setArg', @)
       @defaultContainer = '#inSideContainer'
       @defaultApp = 'Main:index'
       @layout = 'Main:layout'
@@ -257,6 +259,26 @@ class Launcher
          return if app == null
          self.onhashchange({newURL : window.location.pathname + "#!/#{app}/#{args}"})
 
+   clear:->
+      @hash=''
+      self.history.pushState?(null, '','#')
+
+   setArg:({args,reload})->
+      hash=window.location.hash.split('#!')
+      if not hash[1]
+         app = @defaultApp
+         oldArgs=''
+      else
+         [app, oldArgs]=hash[1].substr(1).split('/')
+         if not app
+            app = @defaultApp
+            oldArgs=''
+      oldArgs=inSide.Url.decode(oldArgs)
+      for arg of args
+         oldArgs[arg]=args[arg]
+
+      self.history.pushState?(@defaultContainer, (if @currentView?.__printable__? then @currentView.__printable__ else null),
+               window.location.pathname + "#!/#{app}/#{inSide.Url.encode(oldArgs)}")
    back : ({defaultApp, defaultArgs})->
       if self.history.state
          self.history.back()
