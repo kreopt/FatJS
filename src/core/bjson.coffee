@@ -1,4 +1,5 @@
 # Компрессия и декомпрессия JSON-данных
+
 TOKEN_SYM_START=-1
 class window.BJSON
     binDegrees:(iNum)->
