@@ -1,6 +1,6 @@
-inSide
+FatJS
 ======
 
-coffeescript publish/subscribe based web application framework (distributed application environment in future) v0.0.1
+Javascript publish/subscribe based web application framework v0.0.2
 
 No documentation yet. API is very unstable
