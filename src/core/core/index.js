@@ -43,17 +43,5 @@
     }
   }
 
-  Fat.prototype.connect = function (scope, event, handler) {
-    $(this).on(event, handler.bind(scope))
-  };
-
-  Fat.prototype.emit = function (event, data) {
-    $(this).triggerHandler(event, [data])
-  };
-
-  Fat.prototype.disconnect = function (scope, event, handler) {
-
-  };
-
   window.Fat = new Fat();
 }();
