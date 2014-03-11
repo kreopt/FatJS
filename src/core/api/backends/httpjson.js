@@ -1,8 +1,20 @@
 Fat.register_backend('API','httpjson', {
-    call: function (url, signature, data, ready) {
-        $.post(url, JSON.stringify({signature: signature, data: data}), ready)
+    call: function (url, signature, data, resolve, reject) {
+        $.ajax({
+          type:"POST",
+          url: url,
+          data: JSON.stringify({signature: signature, data: data}),
+          success: resolve,
+          error: reject
+        });
     },
-    call_many: function (url, requests, ready) {
-        $.post(url, JSON.stringify({requests: requests}), ready)
+    call_many: function (url, requests, resolve, reject) {
+        $.ajax({
+          type:"POST",
+          url: url,
+          data: JSON.stringify({requests: requests}),
+          success: resolve,
+          error: reject
+        });
     }
 });
