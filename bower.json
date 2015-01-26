@@ -10,7 +10,9 @@
   "license": "MIT",
   "private": false,
   "ignore": [
-    "**/.*",
+    "old",
+    "src",
+    "gulpfile.js",
     "node_modules",
     "bower_components",
     "test",
