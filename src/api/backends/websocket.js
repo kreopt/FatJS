@@ -1,10 +1,10 @@
 !function () {
-    let seq = 0;
-    let state = null;
-    let ws = null;
-    let promises = {};
-    let queue = [];
-    let timeout = 100;
+    var seq = 0;
+    var state = null;
+    var ws = null;
+    var promises = {};
+    var queue = [];
+    var timeout = 100;
 
     var init = function (url) {
         ws = new WebSocket(url);
@@ -21,11 +21,11 @@
             console.log('Соединение потеряно, восстанавливаем...');
             setTimeout(function () {
                 timeout *= 2;
-                init(url)
+                init(url);
             }, timeout);
         };
         ws.onmessage = function (evt) {
-            let msg = JSON.parse(evt.data);
+            var msg = JSON.parse(evt.data);
             console.debug('RECV>', msg);
             if (promises[msg.seq]) {
                 if (!msg.status) {
@@ -47,9 +47,9 @@
         ws.send(JSON.stringify(data));
         seq++;
     };
-    Fat.register_backend('API', 'ws', {
+    Fat.API.prototype.add_backend('ws', {
         call: function (options, signature, data) {
-            let ready = new Promise();
+            var ready = new Promise();
             if (!state) {
                 queue.push([
                     {signature: signature, data: data},
@@ -62,7 +62,7 @@
             }
         },
         call_many: function (options, requests) {
-            let ready = new Promise();
+            var ready = new Promise();
             if (!state) {
                 queue.push([
                     {requests: requests},
@@ -74,5 +74,5 @@
                 send({requests: requests}, ready, options);
             }
         }
-    })
+    });
 }();

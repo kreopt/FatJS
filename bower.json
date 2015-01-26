@@ -1,0 +1,22 @@
+{
+  "name": "fatjs",
+  "version": "0.0.3",
+  "authors": [
+    "dagroup <it@dagroup.pro>"
+  ],
+  "moduleType": [
+    "globals"
+  ],
+  "license": "MIT",
+  "private": false,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jinjajs":""
+  }
+}
