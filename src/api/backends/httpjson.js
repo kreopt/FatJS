@@ -1,4 +1,4 @@
-Fat.API.prototype.add_backend('httpjson', {
+Fat.api.prototype.add_backend('httpjson', {
     call: function (url, signature, data) {
         return new Promise(function(resolve, reject){
             $.ajax({
