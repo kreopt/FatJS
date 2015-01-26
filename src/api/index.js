@@ -17,4 +17,4 @@ API.prototype.call = function (signature, args) {
 API.prototype.call_many = function (requests) {
     return API.prototype.backends[this.options.backend].call_many(this.options.url, requests);
 };
-Fat.api = API;
+Fat.register_module('api', API);

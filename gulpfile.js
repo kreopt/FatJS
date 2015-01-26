@@ -14,6 +14,8 @@ var build_modules = [
     'core.js',
     'api/index.js',
     'api/backends/*.js',
+    'serializers/*.js',
+    'router/*.js',
     'template.js',
     'templatetags/*.js'
 ];

@@ -24,23 +24,25 @@
         if (!matches) {
             matches = [];
         }
-        for (var i = 0, keys = Object.keys(patterns), len = keys.length; i < len; i++) {
-            var pattern = keys[i];
+        for (var pattern in patterns) {
             match = url.match(new RegExp(prefix + pattern, ''));
             if (match) {
-                if (patterns[pattern].action) {
-                    var actionInfo = Object.assign({}, patterns[pattern]);
-                    replace_placeholders(match, actionInfo.args);
-                    return actionInfo;
+                if (patterns[pattern].patterns) {
+                    return find_match(url, prefix + pattern, patterns[pattern].patterns, matches);
                 } else {
-                    return find_match(url, prefix + pattern, patterns[pattern], matches);
+                    var res = Object.assign({}, patterns[pattern]);
+                    res.pattern = pattern;
+                    res.url = url;
+                    //replace_placeholders(match, actionInfo.args);
+                    //return actionInfo;
+                    return res;
                 }
             }
         }
         return null;
     }
 
-    Fat.Router = {
+    Fat.router = {
         resolve: function (url, patterns) {
             if (!patterns) {
                 return find_match(url, '', url_patterns);
