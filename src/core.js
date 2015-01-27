@@ -10,6 +10,7 @@ const Fat = {
         Object.assign(this.config, options);
 
         for (var mod in this.config.modules){
+            if (!Fat[mod]) continue;
             Fat[mod].configure && Fat[mod].configure(this.config.modules[mod]);
         }
 
