@@ -4,8 +4,11 @@ function API(options) {
         url:     window.location.pathname,
         backend: 'httpjson'
     };
-    this.options = $.extend(this.defaults, this.options);
+    this.options = Object.assign(this.defaults, this.options);
 }
+API.prototype.configure = function(options){
+    this.options = Object.assign(this.defaults, options || {});
+};
 API.prototype.backends = {};
 API.prototype.add_backend = function (name, backend) {
     API.prototype.backends[name] = backend;

@@ -47,7 +47,7 @@
         ws.send(JSON.stringify(data));
         seq++;
     };
-    Fat.api.prototype.add_backend('ws', {
+    Fat.api.add_backend('ws', {
         call: function (options, signature, data) {
             var ready = new Promise();
             if (!state) {

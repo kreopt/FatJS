@@ -14,7 +14,7 @@ Fat.url = {
                 if (prefix) {
                     keyName = prefix + "[" + keyName + "]";
                 }
-                encoded_arg = Fat.stringify(data[key], keyName);
+                encoded_arg = Fat.url.stringify(data[key], keyName);
             }
             encoded.push(encoded_arg);
         }

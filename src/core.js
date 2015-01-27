@@ -3,14 +3,22 @@ const Fat = {
     config:          {},
     signals:         new Map(),
     configure:       function (options) {
+        Object.assign(this.config.modules, options.modules);
+        Object.assign(this.config.plugins, options.plugins);
+        delete options.modules;
+        delete options.plugins;
         Object.assign(this.config, options);
+
+        for (var mod in this.config.modules){
+            Fat[mod].configure && Fat[mod].configure(this.config.modules[mod]);
+        }
 
         if (jinja && this.config.template_url) {
             jinja.template_url = this.config.template_url;
         }
     },
     register_module: function (name, mod) {
-        Object.defineProperty(Fat, name, {value:mod, writable:false});
+        Object.defineProperty(Fat, name, {value:new mod(Fat.config.modules[name]), writable:false});
     },
     register_plugin: function (name, plugin) {
         if (typeof(plugin.init) != 'function') {
@@ -31,6 +39,10 @@ const Fat = {
     }
 };
 Object.defineProperty(Fat.config,'plugins',{
+    writable:false,
+    value:{}
+});
+Object.defineProperty(Fat.config,'modules',{
     writable:false,
     value:{}
 });

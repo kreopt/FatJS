@@ -3,14 +3,22 @@
     config:          {},
     signals:         new Map(),
     configure:       function (options) {
+        Object.assign(this.config.modules, options.modules);
+        Object.assign(this.config.plugins, options.plugins);
+        delete options.modules;
+        delete options.plugins;
         Object.assign(this.config, options);
+
+        for (var mod in this.config.modules){
+            Fat[mod].configure && Fat[mod].configure(this.config.modules[mod]);
+        }
 
         if (jinja && this.config.template_url) {
             jinja.template_url = this.config.template_url;
         }
     },
     register_module: function (name, mod) {
-        Object.defineProperty(Fat, name, {value:mod, writable:false});
+        Object.defineProperty(Fat, name, {value:new mod(Fat.config.modules[name]), writable:false});
     },
     register_plugin: function (name, plugin) {
         if (typeof(plugin.init) != 'function') {
@@ -34,31 +42,35 @@ Object.defineProperty(Fat.config,'plugins',{
     writable:false,
     value:{}
 });
-Fat.ajax_get = function(url){
-    return new Promise(function(resolve, reject){
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4) {
-                if (xhr.status == 200) {
-                    return resolve(xhr.responseText);
-                }
-                reject({xhr: xhr})
-            }
-        };
-        xhr.send(null);
+Object.defineProperty(Fat.config,'modules',{
+    writable:false,
+    value:{}
+});
+Fat.fetch = function(url, options){
+    options = options || {};
+    return fetch(url, options).then(function(response){
+        // status "0" to handle local files fetching (e.g. Cordova/Phonegap etc.)
+        if (response.status === 200 || response.status === 0) {
+            return Promise.resolve(response)
+        } else {
+            return Promise.reject(new Error(response.statusText))
+        }
+    }).then(function(response){
+        // TODO: handle other fetch data types
+        if (options.type == 'json'){
+            return response.json();
+        } else {
+            return response.text();
+        }
     });
 };
-Fat.fetch = function (name) {
-    return new Promise(function (resolve, reject) {
-        var url = Fat.config.static_url;
-        if (!url.endsWith('/')) {
-            url += '/';
-        }
-        url += 'data/' + name + '.json';
-
-        return Fat.ajax_get(url);
-    });
+Fat.fetch_data = function (name) {
+    var url = Fat.config.static_url;
+    if (!url.endsWith('/')) {
+        url += '/';
+    }
+    url += 'data/' + name + '.json';
+    return Fat.fetch(url, {type:'json',headers:{'Accept':'application/json'}});
 };
 Fat.add_listener = function (signal, handler, scope) {
     if (!Fat.signals.has(signal)) {
@@ -132,8 +144,11 @@ function API(options) {
         url:     window.location.pathname,
         backend: 'httpjson'
     };
-    this.options = $.extend(this.defaults, this.options);
+    this.options = Object.assign(this.defaults, this.options);
 }
+API.prototype.configure = function(options){
+    this.options = Object.assign(this.defaults, options || {});
+};
 API.prototype.backends = {};
 API.prototype.add_backend = function (name, backend) {
     API.prototype.backends[name] = backend;
@@ -147,74 +162,36 @@ API.prototype.call_many = function (requests) {
 };
 Fat.register_module('api', API);
 
-Fat.api.prototype.add_backend('http', {
+Fat.api.add_backend('http', {
     call: function (url, signature, data) {
-        return new Promise(function(resolve, reject){
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: {signature: signature, data: data},
-                dataType: 'json',
-                success: function(r){
-                    resolve(r);
-                },
-                error: function(jqXHR, textStatus, errorThrown){
-                    reject("API: "+textStatus+" "+errorThrown);
-                }
-            });
+        return Fat.fetch(url,{
+            method:"POST",
+            body: Fat.url.stringify({signature: signature, data: data}),
+            type:'json'
         });
-
     },
     call_many: function (url, requests) {
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                type:    "POST",
-                url:     url,
-                data:    {requests: requests},
-                dataType: 'json',
-                success: function (r) {
-                    resolve(r);
-                },
-                error: function(jqXHR, textStatus, errorThrown){
-                    reject("API: "+textStatus+" "+errorThrown);
-                }
-            });
+        return Fat.fetch(url,{
+            method:"POST",
+            body: Fat.url.stringify({requests: requests}),
+            type:'json'
         });
     }
 });
 
-Fat.api.prototype.add_backend('httpjson', {
+Fat.api.add_backend('httpjson', {
     call: function (url, signature, data) {
-        return new Promise(function(resolve, reject){
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: JSON.stringify({signature: signature, data: data}),
-                dataType: 'json',
-                success: function(r){
-                    resolve(r);
-                },
-                error: function(jqXHR, textStatus, errorThrown){
-                    reject("API: "+textStatus+" "+errorThrown);
-                }
-            });
+        return Fat.fetch(url,{
+            method:"POST",
+            body: JSON.stringify({signature: signature, data: data}),
+            type:'json'
         });
-
     },
     call_many: function (url, requests) {
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                type:    "POST",
-                url:     url,
-                data:    JSON.stringify({requests: requests}),
-                dataType: 'json',
-                success: function (r) {
-                    resolve(r);
-                },
-                error: function(jqXHR, textStatus, errorThrown){
-                    reject("API: "+textStatus+" "+errorThrown);
-                }
-            });
+        return Fat.fetch(url,{
+            method:"POST",
+            body: JSON.stringify({requests: requests}),
+            type:'json'
         });
     }
 });
@@ -268,7 +245,7 @@ Fat.api.prototype.add_backend('httpjson', {
         ws.send(JSON.stringify(data));
         seq++;
     };
-    Fat.api.prototype.add_backend('ws', {
+    Fat.api.add_backend('ws', {
         call: function (options, signature, data) {
             var ready = new Promise();
             if (!state) {
@@ -314,7 +291,7 @@ Fat.url = {
                 if (prefix) {
                     keyName = prefix + "[" + keyName + "]";
                 }
-                encoded_arg = Fat.stringify(data[key], keyName);
+                encoded_arg = Fat.url.stringify(data[key], keyName);
             }
             encoded.push(encoded_arg);
         }

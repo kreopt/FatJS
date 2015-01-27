@@ -20,6 +20,6 @@
   ],
   "dependencies": {
     "jinjajs":"",
-    "fetch":""  // polyfill just for first time
+    "fetch":""
   }
 }

@@ -1,5 +1,4 @@
 var gulp = require('gulp');
-var jshint = require('gulp-jshint');
 var concat = require('gulp-concat');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
@@ -12,7 +11,7 @@ const out_dir = './';
 const source_dir = './src/';
 var build_modules = [
     'core.js',
-    'api/index.js',
+    'api/api.js',
     'api/backends/*.js',
     'serializers/*.js',
     'router/*.js',

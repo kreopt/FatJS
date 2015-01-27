@@ -1,35 +1,16 @@
-Fat.api.prototype.add_backend('http', {
+Fat.api.add_backend('http', {
     call: function (url, signature, data) {
-        return new Promise(function(resolve, reject){
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: {signature: signature, data: data},
-                dataType: 'json',
-                success: function(r){
-                    resolve(r);
-                },
-                error: function(jqXHR, textStatus, errorThrown){
-                    reject("API: "+textStatus+" "+errorThrown);
-                }
-            });
+        return Fat.fetch(url,{
+            method:"POST",
+            body: Fat.url.stringify({signature: signature, data: data}),
+            type:'json'
         });
-
     },
     call_many: function (url, requests) {
-        return new Promise(function(resolve, reject) {
-            $.ajax({
-                type:    "POST",
-                url:     url,
-                data:    {requests: requests},
-                dataType: 'json',
-                success: function (r) {
-                    resolve(r);
-                },
-                error: function(jqXHR, textStatus, errorThrown){
-                    reject("API: "+textStatus+" "+errorThrown);
-                }
-            });
+        return Fat.fetch(url,{
+            method:"POST",
+            body: Fat.url.stringify({requests: requests}),
+            type:'json'
         });
     }
 });
