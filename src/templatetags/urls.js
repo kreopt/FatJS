@@ -2,7 +2,7 @@
     const reverse={};
     const urls = {};
 
-    Fat.urls=function urls(urls){
+    Fat.urls=function(urls){
 
     };
 

@@ -1,24 +1,6 @@
 !function () {
     var url_patterns = {};
 
-    function replace_placeholders(match, args) {
-        if (!args) {
-            return;
-        }
-        var match_place;
-        for (var i = 0, keys = Object.keys(args), len = keys.length; i < len; i++) {
-            var arg = keys[i];
-            if (typeof args[arg] === 'object') {
-                replace_placeholders(match, args[arg]);
-            } else if (typeof args[arg] === 'string') {
-                match_place = args[arg].match(new RegExp('\\$(\\d+)', ''));
-                if (match_place) {
-                    args[arg] = match[Number(match_place[1])];
-                }
-            }
-        }
-    }
-
     function find_match(url, prefix, patterns, matches) {
         var match;
         if (!matches) {
@@ -33,8 +15,8 @@
                     var res = Object.assign({}, patterns[pattern]);
                     res.pattern = pattern;
                     res.url = url;
-                    //replace_placeholders(match, actionInfo.args);
-                    //return actionInfo;
+                    res.match = match;
+                    //replace_placeholders(match, res.args);
                     return res;
                 }
             }

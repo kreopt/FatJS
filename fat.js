@@ -145,18 +145,107 @@ Fat.emit = function (signal, data) {
 
 window.Fat = Fat;
 
+Fat.url = {
+    stringify:function(data, prefix = '') {
+        if (typeof(data) === typeof('')) {
+            return data;
+        }
+        var encoded = [];
+        var keyName;
+        var encoded_arg;
+        for (var key of Object.getOwnPropertyNames(data)) {
+            if (typeof(data[key]) !== typeof({})) {
+                encoded_arg = key + "=" + encodeURIComponent(data[key]);
+            } else {
+                keyName = encodeURIComponent(key);
+                if (prefix) {
+                    keyName = prefix + "[" + keyName + "]";
+                }
+                encoded_arg = Fat.url.stringify(data[key], keyName);
+            }
+            encoded.push(encoded_arg);
+        }
+        return encoded.join('&');
+    },
+
+    parse_key: function(key, object, value) {
+        var first_key = key.substr(0, key.indexOf('['));
+        if (!first_key) {
+            object[first_key] = value;
+            return;
+        }
+        object[first_key] = object[first_key] || {};
+        var key_rest = key.substr(first_key.length + 1);
+        parse_key(key_rest.substr(0, key_rest.indexOf(']')) + key_rest.substr(key_rest.indexOf(']') + 1), object[first_key], value);
+    },
+
+    parse: function(serialized) {
+        if (!serialized) {
+            return {};
+        }
+        var hashes = serialized.split('&');
+        var vars = {};
+        var key;
+        var val;
+        for (var i = 0, len = hashes.length; i < len; i++) {
+            [key, val] = decodeURIComponent(hashes[i]).split('=');
+            this.parse_key(key, vars, val);
+        }
+        return vars;
+    }
+};
+
+!function () {
+    var url_patterns = {};
+
+    function find_match(url, prefix, patterns, matches) {
+        var match;
+        if (!matches) {
+            matches = [];
+        }
+        for (var pattern in patterns) {
+            match = url.match(new RegExp(prefix + pattern, ''));
+            if (match) {
+                if (patterns[pattern].patterns) {
+                    return find_match(url, prefix + pattern, patterns[pattern].patterns, matches);
+                } else {
+                    var res = Object.assign({}, patterns[pattern]);
+                    res.pattern = pattern;
+                    res.url = url;
+                    res.match = match;
+                    //replace_placeholders(match, res.args);
+                    return res;
+                }
+            }
+        }
+        return null;
+    }
+
+    Fat.router = {
+        resolve: function (url, patterns) {
+            if (!patterns) {
+                return find_match(url, '', url_patterns);
+            } else {
+                return find_match(url, '', patterns);
+            }
+        },
+        patterns: function (patterns) {
+            Object.assign(url_patterns, patterns);
+        }
+    };
+}();
+
 function API(options) {
-    this.options = options || {};
     this.defaults = {
         url:     window.location.pathname,
         backend: 'httpjson'
     };
-    this.options = Object.assign(this.defaults, this.options);
+    this.configure(options);
 }
+API.prototype.backends = {};
 API.prototype.configure = function(options){
     this.options = Object.assign(this.defaults, options || {});
 };
-API.prototype.backends = {};
 API.prototype.register_backend = function (name, backend) {
     API.prototype.backends[name] = backend;
 };
@@ -282,60 +371,77 @@ Fat.register_backend('api','httpjson', {
     });
 }();
 
-Fat.url = {
-    stringify:function(data, prefix = '') {
-        if (typeof(data) === typeof('')) {
-            return data;
-        }
-        var encoded = [];
-        var keyName;
-        var encoded_arg;
-        for (var key of Object.getOwnPropertyNames(data)) {
-            if (typeof(data[key]) !== typeof({})) {
-                encoded_arg = key + "=" + encodeURIComponent(data[key]);
-            } else {
-                keyName = encodeURIComponent(key);
-                if (prefix) {
-                    keyName = prefix + "[" + keyName + "]";
-                }
-                encoded_arg = Fat.url.stringify(data[key], keyName);
-            }
-            encoded.push(encoded_arg);
-        }
-        return encoded.join('&');
-    },
+function Datasource(options) {
+    this.configure(options);
+}
 
-    parse_key: function(key, object, value) {
-        var first_key = key.substr(0, key.indexOf('['));
-        if (!first_key) {
-            object[first_key] = value;
-            return;
-        }
-        object[first_key] = object[first_key] || {};
-        var key_rest = key.substr(first_key.length + 1);
-        parse_key(key_rest.substr(0, key_rest.indexOf(']')) + key_rest.substr(key_rest.indexOf(']') + 1), object[first_key], value);
-    },
-
-    parse: function(serialized) {
-        if (!serialized) {
-            return {};
-        }
-        var hashes = serialized.split('&');
-        var vars = {};
-        var key;
-        var val;
-        for (var i = 0, len = hashes.length; i < len; i++) {
-            [key, val] = decodeURIComponent(hashes[i]).split('=');
-            this.parse_key(key, vars, val);
-        }
-        return vars;
-    }
+Datasource.prototype.configure = function(options){
+    Object.assign(this.options, options || {});
 };
 
-!function () {
-    var url_patterns = {};
+Datasource.prototype.register_backend = function (name, backend) {
+    this.backends[name] = backend;
+};
 
-    function replace_placeholders(match, args) {
+Datasource.prototype.fetch = function(sources) {
+    var _this = this;
+    return Promise.all(sources.map(function(s){
+        _this.backends[s.type].fetch(s.fields);
+    })).then(function(r){
+        var res={};
+        for (var rec in r){
+            Object.assign(res, rec);
+        }
+        return res;
+    });
+};
+
+Fat.register_module('datasource', Datasource);
+
+Fat.register_backend('datasource', 'api', {
+    fetch(fields) {
+        return Fat.api.call_many(fields);
+    }
+});
+
+Fat.register_backend('datasource', 'cookie', {
+    getCookie(name) {
+      var matches = document.cookie.match(new RegExp(
+        "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+      ));
+      return matches ? decodeURIComponent(matches[1]) : undefined;
+    },
+    fetch(fields) {
+        var r = {};
+        for (var field of fields){
+            r[field] =  this.getCookie(field);
+        }
+    }
+});
+Fat.register_backend('datasource', 'simple', {
+    fetch(data) {
+        return data;
+    }
+});
+
+Fat.register_backend('datasource', 'local_storage', {
+    fetch(fields) {
+        var r = {};
+        for (var field of fields){
+            r[field] =  localStorage.getItem(field);
+        }
+    }
+});
+Fat.register_backend('datasource', 'session_storage', {
+    fetch(fields) {
+        var r = {};
+        for (var field of fields){
+            r[field] =  sessionStorage.getItem(field);
+        }
+    }
+});
+Fat.register_backend('datasource', 'url', {
+    replace_placeholders(match, args) {
         if (!args) {
             return;
         }
@@ -351,44 +457,13 @@ Fat.url = {
                 }
             }
         }
+    },
+    fetch(data) {
+        var info = Fat.router.resolve(window.location.pathname);
+        this.replace_placeholders(info.match, data);
+        return res;
     }
-
-    function find_match(url, prefix, patterns, matches) {
-        var match;
-        if (!matches) {
-            matches = [];
-        }
-        for (var pattern in patterns) {
-            match = url.match(new RegExp(prefix + pattern, ''));
-            if (match) {
-                if (patterns[pattern].patterns) {
-                    return find_match(url, prefix + pattern, patterns[pattern].patterns, matches);
-                } else {
-                    var res = Object.assign({}, patterns[pattern]);
-                    res.pattern = pattern;
-                    res.url = url;
-                    //replace_placeholders(match, actionInfo.args);
-                    //return actionInfo;
-                    return res;
-                }
-            }
-        }
-        return null;
-    }
-
-    Fat.router = {
-        resolve: function (url, patterns) {
-            if (!patterns) {
-                return find_match(url, '', url_patterns);
-            } else {
-                return find_match(url, '', patterns);
-            }
-        },
-        patterns: function (patterns) {
-            Object.assign(url_patterns, patterns);
-        }
-    };
-}();
+});
 
 Fat.render = function ($elements, template, data) {
     return new Promise(function (resolve, reject) {

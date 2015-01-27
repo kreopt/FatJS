@@ -1,16 +1,28 @@
-!function () {
-    class Datasource extends FatPlugin {
-        constructor(backend, options = {}) {
-            super(options);
-            if (!this.backends[backend]) {
-                throw ("Failed to create datasource: backend " + backend + " does not exists");
-            }
-            this.backend = new this.backends[backend](options);
-        }
+function Datasource(options) {
+    this.options={};
+    this.backends={};
+    this.configure(options);
+}
 
-        fetch(ready) {
-            return this.backend.fetch();
+Datasource.prototype.configure = function(options){
+    Object.assign(this.options, options || {});
+};
+
+Datasource.prototype.register_backend = function (name, backend) {
+    this.backends[name] = backend;
+};
+
+Datasource.prototype.fetch = function(sources) {
+    var _this = this;
+    return Promise.all(sources.map(function(s){
+        _this.backends[s.type].fetch(s.fields);
+    })).then(function(r){
+        var res={};
+        for (var rec in r){
+            Object.assign(res, rec);
         }
-    }
-    Fat.register_plugin('Datasource', Datasource);
-}();
+        return res;
+    });
+};
+
+Fat.register_module('datasource', Datasource);

@@ -1,15 +1,14 @@
 function API(options) {
-    this.options = options || {};
     this.defaults = {
         url:     window.location.pathname,
         backend: 'httpjson'
     };
-    this.options = Object.assign(this.defaults, this.options);
+    this.configure(options);
 }
+API.prototype.backends = {};
 API.prototype.configure = function(options){
     this.options = Object.assign(this.defaults, options || {});
 };
-API.prototype.backends = {};
 API.prototype.register_backend = function (name, backend) {
     API.prototype.backends[name] = backend;
 };

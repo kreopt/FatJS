@@ -6,7 +6,7 @@ Fat.url = {
         var encoded = [];
         var keyName;
         var encoded_arg;
-        for (var key of Object.getOwnPropertyNames(data)) {
+        for (var key in data) {
             if (typeof(data[key]) !== typeof({})) {
                 encoded_arg = key + "=" + encodeURIComponent(data[key]);
             } else {
