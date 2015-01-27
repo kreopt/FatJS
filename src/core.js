@@ -20,6 +20,12 @@ const Fat = {
     register_module: function (name, mod) {
         Object.defineProperty(Fat, name, {value:new mod(Fat.config.modules[name]), writable:false});
     },
+    register_backend: function (mod, name, backend) {
+        if (!Fat[mod]) {
+            throw new Error("no such module: "+mod);
+        }
+        Fat[mod].register_backend && Fat[mod].register_backend(name, backend);
+    },
     register_plugin: function (name, plugin) {
         if (typeof(plugin.init) != 'function') {
             throw "[" + name + "] bad plugin: no init";

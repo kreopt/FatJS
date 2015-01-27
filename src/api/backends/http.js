@@ -1,4 +1,4 @@
-Fat.api.add_backend('http', {
+Fat.register_backend('api','http', {
     call: function (url, signature, data) {
         return Fat.fetch(url,{
             method:"POST",

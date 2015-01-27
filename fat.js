@@ -20,6 +20,12 @@
     register_module: function (name, mod) {
         Object.defineProperty(Fat, name, {value:new mod(Fat.config.modules[name]), writable:false});
     },
+    register_backend: function (mod, name, backend) {
+        if (!Fat[mod]) {
+            throw new Error("no such module: "+mod);
+        }
+        Fat[mod].register_backend && Fat[mod].register_backend(name, backend);
+    },
     register_plugin: function (name, plugin) {
         if (typeof(plugin.init) != 'function') {
             throw "[" + name + "] bad plugin: no init";
@@ -150,7 +156,7 @@ API.prototype.configure = function(options){
     this.options = Object.assign(this.defaults, options || {});
 };
 API.prototype.backends = {};
-API.prototype.add_backend = function (name, backend) {
+API.prototype.register_backend = function (name, backend) {
     API.prototype.backends[name] = backend;
 };
 API.prototype.call = function (signature, args) {
@@ -162,7 +168,7 @@ API.prototype.call_many = function (requests) {
 };
 Fat.register_module('api', API);
 
-Fat.api.add_backend('http', {
+Fat.register_backend('api','http', {
     call: function (url, signature, data) {
         return Fat.fetch(url,{
             method:"POST",
@@ -179,7 +185,7 @@ Fat.api.add_backend('http', {
     }
 });
 
-Fat.api.add_backend('httpjson', {
+Fat.register_backend('api','httpjson', {
     call: function (url, signature, data) {
         return Fat.fetch(url,{
             method:"POST",
@@ -245,7 +251,7 @@ Fat.api.add_backend('httpjson', {
         ws.send(JSON.stringify(data));
         seq++;
     };
-    Fat.api.add_backend('ws', {
+    Fat.register_backend('api', 'ws', {
         call: function (options, signature, data) {
             var ready = new Promise();
             if (!state) {
