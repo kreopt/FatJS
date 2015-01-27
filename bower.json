@@ -19,6 +19,7 @@
     "tests"
   ],
   "dependencies": {
-    "jinjajs":""
+    "jinjajs":"",
+    "fetch":""  // polyfill just for first time
   }
 }

@@ -34,31 +34,31 @@ Object.defineProperty(Fat.config,'plugins',{
     writable:false,
     value:{}
 });
-Fat.ajax_get = function(url){
-    return new Promise(function(resolve, reject){
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4) {
-                if (xhr.status == 200) {
-                    return resolve(xhr.responseText);
-                }
-                reject({xhr: xhr})
-            }
-        };
-        xhr.send(null);
+Fat.fetch = function(url, options){
+    options = options || {};
+    return fetch(url, options).then(function(response){
+        // status "0" to handle local files fetching (e.g. Cordova/Phonegap etc.)
+        if (response.status === 200 || response.status === 0) {
+            return Promise.resolve(response)
+        } else {
+            return Promise.reject(new Error(response.statusText))
+        }
+    }).then(function(response){
+        // TODO: handle other fetch data types
+        if (options.type == 'json'){
+            return response.json();
+        } else {
+            return response.text();
+        }
     });
 };
-Fat.fetch = function (name) {
-    return new Promise(function (resolve, reject) {
-        var url = Fat.config.static_url;
-        if (!url.endsWith('/')) {
-            url += '/';
-        }
-        url += 'data/' + name + '.json';
-
-        return Fat.ajax_get(url);
-    });
+Fat.fetch_data = function (name) {
+    var url = Fat.config.static_url;
+    if (!url.endsWith('/')) {
+        url += '/';
+    }
+    url += 'data/' + name + '.json';
+    return Fat.fetch(url, {type:'json',headers:{'Accept':'application/json'}});
 };
 Fat.add_listener = function (signal, handler, scope) {
     if (!Fat.signals.has(signal)) {
