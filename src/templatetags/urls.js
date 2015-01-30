@@ -1,43 +1,25 @@
-!function(){
-    const reverse={};
-    const urls = {};
-
-    Fat.urls=function(urls){
-
-    };
-
-    function make_reverse(){}
-    make_reverse();
-
-    jinja.make_tag('url',function(stmt){
-        var tokens=stmt.split(' ');
-        var url = tokens[0].substr(1,tokens[0].length-2);
-
-        var open = url.indexOf('(');
-        var close = -1;
-        var url_part;
-        if (open) {
-            url_part = url.substr(close+1, open-close-1);
-            this.push(url_part);
-            close = url.indexOf(')');
-            for (var i = 1; i < tokens.length; i++) {
-                this.push('get(' + tokens[i] + ')');
-                open = url.indexOf('(', close+1);
-                if (open > 0) {
-                    url_part = url.substr(close+1, open-close-1);
-                    this.push(url_part);
-                    close = url.indexOf(')');
-                }
-            }
-            url_part = url.substr(close+1, url.length-close-1);
+jinja.make_tag('url', function (stmt) {
+    stmt = stmt.trim();
+    var parts = stmt.split(/\s/);
+    if (parts.length < 1) {
+        console.warn("url tag should contain 1 or more parameters. ignoring. ");
+        return;
+    }
+    // TODO: check quotes
+    var name = parts[0].substr(1, parts[0].length - 2);
+    var args = {positional: [], keyword: {}};
+    for (var i = 1; i < parts.length; i++) {
+        if (parts[i].indexOf('=') != -1) {
+            var kw = parts[i].split('=');
+            args.keyword[kw[0].trim()] = kw[1].trim();
         } else {
-            url_part = url;
+            args.positional.push(parts[i].trim());
         }
-        this.push(url_part);
-    });
+    }
+    this.push("write(\"" + Fat.router.reverse(name, args) + "\")");
+});
 
-    jinja.make_tag('static',function(stmt){
-        stmt = stmt.trim();
-        this.push("write(\""+Fat.config.static_url + stmt.substr(1,stmt.length-2)+"\")");
-    });
-}();
+jinja.make_tag('static', function (stmt) {
+    stmt = stmt.trim();
+    this.push("write(\"" + Fat.config.static_url + stmt.substr(1, stmt.length - 2) + "\")");
+});

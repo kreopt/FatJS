@@ -1,7 +1,10 @@
 const Fat = {
     plugins:         new Map(),
-    config:          {},
     signals:         new Map(),
+    config:          {
+        static_url: '/public/',
+        template_url: '/public/html/'
+    },
     configure:       function (options) {
         Object.assign(this.config.modules, options.modules);
         Object.assign(this.config.plugins, options.plugins);
